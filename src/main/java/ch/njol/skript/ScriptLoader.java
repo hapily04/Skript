@@ -509,14 +509,12 @@ public class ScriptLoader {
 				throw new NullPointerException();
 			
 			CompletableFuture<Void> future = makeFuture(() -> {
-				List<Structure> loadedStructures = getParser().getLoadedStructures();
-				loadedStructures.clear();
-
 				ScriptInfo info = loadScript(config);
 
-				structures.addAll(loadedStructures);
+				structures.addAll(getParser().getLoadedStructures());
 				
 				// Check if commands have been changed and a re-send is needed
+				// TODO STRUCTURE commands internalized
 				if (!info.commandNames.equals(commandNames.get(config.getFileName()))) {
 					syncCommands.set(true); // Sync once after everything has been loaded
 					commandNames.put(config.getFileName(), info.commandNames); // These will soon be sent to clients
@@ -585,15 +583,14 @@ public class ScriptLoader {
 		scriptInfo.files = 1; // Loading one script
 
 		List<Structure> structures = getParser().getLoadedStructures();
-		
+		structures.clear();
+
 		try {
 			if (SkriptConfig.keepConfigsLoaded.value())
 				SkriptConfig.configs.add(config);
 			
 			getParser().getCurrentOptions().clear();
 			getParser().setCurrentScript(config);
-
-			structures.clear();
 			
 			try (CountingLogHandler ignored = new CountingLogHandler(SkriptLogger.SEVERE).start()) {
 				for (Node cnode : config.getMainNode()) {
