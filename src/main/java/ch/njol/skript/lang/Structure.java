@@ -94,7 +94,9 @@ public abstract class Structure implements SyntaxElement, Debuggable {
 	/**
 	 * Called when this structure is unloaded, similar to {@link SelfRegisteringSkriptEvent#unregister(Trigger)}.
 	 */
-	public abstract void unload();
+	public void unload() {
+
+	}
 
 	public abstract Priority getPriority();
 

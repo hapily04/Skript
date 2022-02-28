@@ -136,11 +136,6 @@ public class StructVariables extends Structure {
 	}
 
 	@Override
-	public void unload() {
-
-	}
-
-	@Override
 	public Priority getPriority() {
 		return PRIORITY;
 	}

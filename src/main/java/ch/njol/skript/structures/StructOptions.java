@@ -59,11 +59,6 @@ public class StructOptions extends Structure {
 		registerOptions();
 	}
 
-	@Override
-	public void unload() {
-
-	}
-
 	private void loadOptions(SectionNode sectionNode, String prefix) {
 		for (Node n : sectionNode) {
 			if (n instanceof EntryNode) {

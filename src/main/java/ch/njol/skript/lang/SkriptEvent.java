@@ -152,11 +152,6 @@ public abstract class SkriptEvent extends Structure implements SyntaxElement, De
 	}
 
 	@Override
-	public void unload() {
-
-	}
-
-	@Override
 	public Priority getPriority() {
 		return PRIORITY;
 	}
