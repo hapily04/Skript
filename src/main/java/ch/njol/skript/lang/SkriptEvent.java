@@ -46,7 +46,7 @@ import java.util.Locale;
  * @see Skript#registerEvent(String, Class, Class[], String...)
  */
 @SuppressWarnings("NotNullFieldNotInitialized")
-public abstract class SkriptEvent extends Structure implements SyntaxElement, Debuggable {
+public abstract class SkriptEvent extends Structure {
 
 	public static final Priority PRIORITY = new Priority(5);
 
@@ -54,12 +54,12 @@ public abstract class SkriptEvent extends Structure implements SyntaxElement, De
 	private SectionNode node;
 	@Nullable
 	protected EventPriority eventPriority;
-	@Nullable
 	private SkriptEventInfo<?> skriptEventInfo;
+	@Nullable
 	private List<TriggerItem> items;
 
 	@Override
-	public boolean init(Literal<?>[] args, int matchedPattern, ParseResult parseResult, SectionNode node) {
+	public final boolean init(Literal<?>[] args, int matchedPattern, ParseResult parseResult, SectionNode node) {
 		this.node = node;
 
 		String expr = parseResult.expr;
@@ -176,7 +176,6 @@ public abstract class SkriptEvent extends Structure implements SyntaxElement, De
 	 * @return the Event classes to use in {@link ch.njol.skript.lang.parser.ParserInstance}.
 	 */
 	public Class<? extends Event>[] getEventClasses() {
-		assert skriptEventInfo != null;
 		return skriptEventInfo.events;
 	}
 
