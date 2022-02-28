@@ -39,6 +39,7 @@ public class StructAliases extends Structure {
 		ParserInstance.registerData(AliasesData.class, AliasesData::new);
 	}
 
+	@SuppressWarnings("NotNullFieldNotInitialized")
 	private ScriptAliases aliases;
 
 	@Override
