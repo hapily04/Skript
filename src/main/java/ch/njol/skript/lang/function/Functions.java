@@ -18,18 +18,6 @@
  */
 package ch.njol.skript.lang.function;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.eclipse.jdt.annotation.Nullable;
-
 import ch.njol.skript.ScriptLoader;
 import ch.njol.skript.Skript;
 import ch.njol.skript.SkriptAPIException;
@@ -43,6 +31,17 @@ import ch.njol.skript.registrations.Classes;
 import ch.njol.skript.util.Utils;
 import ch.njol.util.NonNullPair;
 import ch.njol.util.StringUtils;
+import org.eclipse.jdt.annotation.Nullable;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Static methods to work with functions.
@@ -327,6 +326,20 @@ public abstract class Functions {
 	}
 
 	public static void unregisterFunction(Signature<?> signature) {
+		Iterator<Namespace> namespaceIterator = namespaces.values().iterator();
+		while (namespaceIterator.hasNext()) {
+			Namespace namespace = namespaceIterator.next();
+			if (namespace.removeSignature(signature)) {
+				globalFunctions.remove(signature.getName());
+
+				// remove the namespace if it is empty
+				if (namespace.getSignatures().isEmpty())
+					namespaceIterator.remove();
+
+				break;
+			}
+		}
+
 		for (FunctionReference<?> ref : signature.calls) {
 			if (!signature.script.equals(ref.script)) {
 				toValidate.add(ref);
@@ -343,6 +356,7 @@ public abstract class Functions {
 	/**
 	 * Clears all function calls and removes script functions.
 	 */
+	@Deprecated
 	public static void clearFunctions() {
 		// Keep Java functions, remove everything else
 		globalFunctions.values().removeIf(namespace -> namespace != javaNamespace);

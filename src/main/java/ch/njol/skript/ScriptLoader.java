@@ -95,7 +95,6 @@ public class ScriptLoader {
 		SkriptEventHandler.removeAllTriggers();
 		// TODO STRUCTURE commands & functions internalized
 		Commands.clearCommands();
-		Functions.clearFunctions();
 	}
 	
 	/**
