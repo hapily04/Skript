@@ -71,7 +71,7 @@ public class StructCommand extends Structure {
 	@Override
 	public void unload() {
 		if (command != null)
-			Commands.unregister(command);
+			Commands.unregisterCommand(command);
 	}
 
 	@Override

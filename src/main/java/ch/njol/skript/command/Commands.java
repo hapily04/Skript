@@ -67,7 +67,6 @@ import ch.njol.skript.lang.TriggerItem;
 import ch.njol.skript.lang.VariableString;
 import ch.njol.skript.lang.parser.ParserInstance;
 import ch.njol.skript.localization.ArgsMessage;
-import ch.njol.skript.localization.Language;
 import ch.njol.skript.localization.Message;
 import ch.njol.skript.log.RetainingLogHandler;
 import ch.njol.skript.log.SkriptLogger;
@@ -75,7 +74,6 @@ import ch.njol.skript.registrations.Classes;
 import ch.njol.skript.util.StringMode;
 import ch.njol.skript.util.Timespan;
 import ch.njol.skript.util.Utils;
-import ch.njol.util.Callback;
 import ch.njol.util.NonNullPair;
 import ch.njol.util.StringUtils;
 
@@ -525,26 +523,21 @@ public abstract class Commands {
 		command.registerHelp();
 	}
 	
-	public static int unregisterCommands(final File script) {
+	public static int unregisterCommands(File script) {
 		int numCommands = 0;
 		final Iterator<ScriptCommand> commandsIter = commands.values().iterator();
 		while (commandsIter.hasNext()) {
 			final ScriptCommand c = commandsIter.next();
 			if (script.equals(c.getScript())) {
 				numCommands++;
-				unregister(c);
-//				c.unregisterHelp();
-//				if (commandMap != null) {
-//					assert cmKnownCommands != null;// && cmAliases != null;
-////					c.unregister(commandMap, cmKnownCommands, cmAliases);
-//				}
+				unregisterCommand(c);
 				commandsIter.remove();
 			}
 		}
 		return numCommands;
 	}
 
-	public static void unregister(ScriptCommand scriptCommand) {
+	public static void unregisterCommand(ScriptCommand scriptCommand) {
 		scriptCommand.unregisterHelp();
 		if (commandMap != null) {
 			assert cmKnownCommands != null;// && cmAliases != null;
