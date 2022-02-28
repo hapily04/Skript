@@ -46,6 +46,7 @@ import ch.njol.skript.lang.Section;
 import ch.njol.skript.lang.SkriptEvent;
 import ch.njol.skript.lang.SkriptEventInfo;
 import ch.njol.skript.lang.Statement;
+import ch.njol.skript.lang.Structure;
 import ch.njol.skript.lang.SyntaxElementInfo;
 import ch.njol.skript.lang.Trigger;
 import ch.njol.skript.lang.TriggerItem;
@@ -64,7 +65,6 @@ import ch.njol.skript.registrations.Classes;
 import ch.njol.skript.registrations.Comparators;
 import ch.njol.skript.registrations.Converters;
 import ch.njol.skript.registrations.EventValues;
-import ch.njol.skript.lang.Structure;
 import ch.njol.skript.tests.runner.SkriptTestEvent;
 import ch.njol.skript.tests.runner.TestMode;
 import ch.njol.skript.tests.runner.TestTracker;
@@ -1415,7 +1415,7 @@ public final class Skript extends JavaPlugin implements Listener {
 
 		String[] transformedPatterns = new String[patterns.length];
 		for (int i = 0; i < patterns.length; i++)
-			transformedPatterns[i] = "[on] " + patterns[i] + " [with priority (lowest|low|normal|high|highest|monitor)]";
+			transformedPatterns[i] = "[on] " + SkriptEvent.fixPattern(patterns[i]) + " [with priority (lowest|low|normal|high|highest|monitor)]";
 
 		SkriptEventInfo<E> r = new SkriptEventInfo<>(name, transformedPatterns, c, originClassPath, events);
 		structures.add(r);
