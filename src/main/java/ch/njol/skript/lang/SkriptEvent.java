@@ -87,6 +87,11 @@ public abstract class SkriptEvent extends Structure implements SyntaxElement, De
 
 		this.expr = parseResult.expr = expr;
 
+		SyntaxElementInfo<? extends Structure> syntaxElementInfo = getParser().getData(StructureData.class).getSyntaxElementInfo();
+		if (!(syntaxElementInfo instanceof SkriptEventInfo))
+			throw new IllegalStateException();
+		skriptEventInfo = (SkriptEventInfo<?>) syntaxElementInfo;
+
 		return init(args, matchedPattern, parseResult);
 	}
 
@@ -103,11 +108,6 @@ public abstract class SkriptEvent extends Structure implements SyntaxElement, De
 		if (Skript.debug() || node.debug())
 			Skript.debug(expr + " (" + this + "):");
 
-		SyntaxElementInfo<? extends Structure> syntaxElementInfo = getParser().getData(StructureData.class).getSyntaxElementInfo();
-		if (!(syntaxElementInfo instanceof SkriptEventInfo))
-			throw new IllegalStateException();
-		skriptEventInfo = (SkriptEventInfo<?>) syntaxElementInfo;
-
 		Class<? extends Event>[] eventClasses = getEventClasses();
 
 		try {
@@ -123,7 +123,7 @@ public abstract class SkriptEvent extends Structure implements SyntaxElement, De
 
 	@Override
 	public void afterLoad() {
-		if (skriptEventInfo == null) // shouldLoadEvent returned false
+		if (items == null) // shouldLoadEvent returned false
 			return;
 
 		getParser().setCurrentEvent(skriptEventInfo.getName().toLowerCase(Locale.ENGLISH), getEventClasses());
