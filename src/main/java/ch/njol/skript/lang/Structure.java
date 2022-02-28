@@ -120,7 +120,7 @@ public abstract class Structure implements SyntaxElement, Debuggable {
 		Structure.setNode(sectionNode);
 
 		Iterator<SyntaxElementInfo<? extends Structure>> iterator =
-			new ConsumingIterator<>(Skript.getNormalStructures().iterator(),
+			new ConsumingIterator<>(Skript.getStructures().iterator(),
 				elementInfo -> ParserInstance.get().getData(StructureData.class).syntaxElementInfo = elementInfo);
 
 		ParseLogHandler parseLogHandler = SkriptLogger.startParseLogHandler();

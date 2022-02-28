@@ -1383,7 +1383,7 @@ public final class Skript extends JavaPlugin implements Listener {
 	
 	// ================ EVENTS ================
 
-	private static final List<SyntaxElementInfo<? extends Structure>> normalStructures = new ArrayList<>(10);
+	private static final List<SyntaxElementInfo<? extends Structure>> structures = new ArrayList<>(10);
 	
 	/**
 	 * Registers an event.
@@ -1418,7 +1418,7 @@ public final class Skript extends JavaPlugin implements Listener {
 			transformedPatterns[i] = "[on] " + patterns[i] + " [with priority (lowest|low|normal|high|highest|monitor)]";
 
 		SkriptEventInfo<E> r = new SkriptEventInfo<>(name, transformedPatterns, c, originClassPath, events);
-		Skript.normalStructures.add(r);
+		structures.add(r);
 		return r;
 	}
 
@@ -1426,21 +1426,22 @@ public final class Skript extends JavaPlugin implements Listener {
 		checkAcceptRegistrations();
 		String originClassPath = Thread.currentThread().getStackTrace()[2].getClassName();
 		SyntaxElementInfo<E> structureInfo = new SyntaxElementInfo<>(patterns, c, originClassPath);
-		normalStructures.add(structureInfo);
+		structures.add(structureInfo);
 	}
 
 	/**
 	 * Modifications made to the returned Collection will not be reflected in the events available for parsing.
 	 */
 	public static Collection<SkriptEventInfo<?>> getEvents() {
-		return normalStructures.stream()
+		// Only used in documentation generation, so generating a new list each time is fine
+		return structures.stream()
 			.filter(info -> info instanceof SkriptEventInfo)
 			.map(info -> (SkriptEventInfo<?>) info)
 			.collect(Collectors.toList());
 	}
 
-	public static List<SyntaxElementInfo<? extends Structure>> getNormalStructures() {
-		return normalStructures;
+	public static List<SyntaxElementInfo<? extends Structure>> getStructures() {
+		return structures;
 	}
 
 	// ================ COMMANDS ================
