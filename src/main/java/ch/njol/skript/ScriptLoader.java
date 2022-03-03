@@ -28,6 +28,7 @@ import ch.njol.skript.events.bukkit.PreScriptLoadEvent;
 import ch.njol.skript.lang.Section;
 import ch.njol.skript.lang.SkriptParser;
 import ch.njol.skript.lang.Statement;
+import ch.njol.skript.lang.Structure;
 import ch.njol.skript.lang.TriggerItem;
 import ch.njol.skript.lang.TriggerSection;
 import ch.njol.skript.lang.function.Functions;
@@ -39,7 +40,6 @@ import ch.njol.skript.log.LogEntry;
 import ch.njol.skript.log.RetainingLogHandler;
 import ch.njol.skript.log.SkriptLogger;
 import ch.njol.skript.sections.SecLoop;
-import ch.njol.skript.lang.Structure;
 import ch.njol.skript.util.Date;
 import ch.njol.skript.util.ExceptionUtils;
 import ch.njol.skript.util.Task;
@@ -468,8 +468,6 @@ public class ScriptLoader {
 							.resolve(Skript.SCRIPTSFOLDER).relativize(script.toPath()).toString();
 						assert name != null;
 					}
-					// TODO STRUCTURE functions internalized
-					Functions.validateFunctions(); // Manually validate functions
 				}
 				
 				if (scriptInfo.files == 0)
@@ -529,6 +527,7 @@ public class ScriptLoader {
 		return CompletableFuture.allOf(scriptInfoFutures.toArray(new CompletableFuture[0]))
 			.thenApply(unused -> {
 				try {
+					openCloseable.open();
 					structures.stream()
 						.sorted(Comparator.comparing(Structure::getPriority))
 						.forEach(structure -> structure.runWithScript(Structure::preload));
@@ -540,6 +539,9 @@ public class ScriptLoader {
 					for (Structure structure : structures) {
 						structure.runWithScript(Structure::afterLoad);
 					}
+
+					// TODO STRUCTURE functions internalized
+					Functions.validateFunctions();
 
 					// After we've loaded everything, refresh commands their names changed
 					// TODO STRUCTURE commands internalized
@@ -560,6 +562,8 @@ public class ScriptLoader {
 					throw Skript.exception(e);
 				} finally {
 					SkriptLogger.setNode(null);
+
+					openCloseable.close();
 				}
 			});
 	}
@@ -836,8 +840,6 @@ public class ScriptLoader {
 			unloadScript_(script);
 		}
 		Config config = loadStructure(script);
-		// TODO STRUCTURE functions internalized
-		Functions.validateFunctions();
 		if (config == null)
 			return CompletableFuture.completedFuture(new ScriptInfo());
 		return loadScripts(Collections.singletonList(config), openCloseable);
@@ -853,8 +855,6 @@ public class ScriptLoader {
 			unloadScripts_(folder);
 		}
 		List<Config> configs = loadStructures(folder);
-		// TODO STRUCTURE functions internalized
-		Functions.validateFunctions();
 		return loadScripts(configs, openCloseable);
 	}
 
