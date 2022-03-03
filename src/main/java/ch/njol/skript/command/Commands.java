@@ -522,16 +522,26 @@ public abstract class Commands {
 		}
 		command.registerHelp();
 	}
-	
+
+	public static void clearCommands() {
+		if (commandMap != null) {
+			assert cmKnownCommands != null && cmAliases != null;
+			for (ScriptCommand c : commands.values())
+				c.unregister(commandMap, cmKnownCommands, cmAliases);
+		}
+		for (ScriptCommand c : commands.values()) {
+			c.unregisterHelp();
+		}
+		commands.clear();
+	}
+
+	@Deprecated
 	public static int unregisterCommands(File script) {
 		int numCommands = 0;
-		final Iterator<ScriptCommand> commandsIter = commands.values().iterator();
-		while (commandsIter.hasNext()) {
-			final ScriptCommand c = commandsIter.next();
+		for (ScriptCommand c : new ArrayList<>(commands.values())) {
 			if (script.equals(c.getScript())) {
 				numCommands++;
 				unregisterCommand(c);
-				commandsIter.remove();
 			}
 		}
 		return numCommands;
@@ -543,6 +553,7 @@ public abstract class Commands {
 			assert cmKnownCommands != null;// && cmAliases != null;
 			scriptCommand.unregister(commandMap, cmKnownCommands, cmAliases);
 		}
+		commands.values().remove(scriptCommand);
 	}
 	
 	private static boolean registeredListeners = false;
@@ -563,25 +574,10 @@ public abstract class Commands {
 		}
 	}
 	
-	public static void clearCommands() {
-		final SimpleCommandMap commandMap = Commands.commandMap;
-		if (commandMap != null) {
-			final Map<String, Command> cmKnownCommands = Commands.cmKnownCommands;
-			final Set<String> cmAliases = Commands.cmAliases;
-			assert cmKnownCommands != null;// && cmAliases != null;
-			for (final ScriptCommand c : commands.values())
-				c.unregister(commandMap, cmKnownCommands, cmAliases);
-		}
-		for (final ScriptCommand c : commands.values()) {
-			c.unregisterHelp();
-		}
-		commands.clear();
-	}
-	
 	/**
 	 * copied from CraftBukkit (org.bukkit.craftbukkit.help.CommandAliasHelpTopic)
 	 */
-	public final static class CommandAliasHelpTopic extends HelpTopic {
+	public static class CommandAliasHelpTopic extends HelpTopic {
 		
 		private final String aliasFor;
 		private final HelpMap helpMap;

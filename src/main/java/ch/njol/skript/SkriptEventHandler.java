@@ -237,8 +237,6 @@ public abstract class SkriptEventHandler {
 		}
 		structures.remove(script);
 		
-		info.commands = Commands.unregisterCommands(script);
-		
 		return info;
 	}
 	
