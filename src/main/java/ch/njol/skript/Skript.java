@@ -320,6 +320,14 @@ public final class Skript extends JavaPlugin implements Listener {
 	}
 
 	/**
+	 * @return whether hooks have been loaded,
+	 * and if {@link #disableHookRegistration(Class[])} won't error because of this.
+	 */
+	public static boolean isFinishedLoadingHooks() {
+		return finishedLoadingHooks;
+	}
+
+	/**
 	 * Disables the registration for the given hook classes. If Skript has been enabled, this method
 	 * will throw an API exception. It should be used in something like {@link JavaPlugin#onLoad()}.
 	 * @param hooks The hooks to disable the registration of.
@@ -601,48 +609,51 @@ public final class Skript extends JavaPlugin implements Listener {
 				
 				// Skript initialization done
 				debug("Early init done");
-				if (TestMode.ENABLED) { // Ignore late init (scripts, etc.) in test mode
-					if (TestMode.DEV_MODE) { // Run tests NOW!
-						info("Test development mode enabled. Test scripts are at " + TestMode.TEST_DIR);
-					} else {
-						info("Running all tests from " + TestMode.TEST_DIR);
-						
-						// Treat parse errors as fatal testing failure
-						@SuppressWarnings("null")
-						CountingLogHandler errorCounter = new CountingLogHandler(Level.SEVERE);
-						try {
-							errorCounter.start();
-							File testDir = TestMode.TEST_DIR.toFile();
-							assert testDir != null;
-							List<Config> configs = ScriptLoader.loadStructures(testDir);
-							ScriptLoader.loadScripts(configs, errorCounter).join();
-						} finally {
-							errorCounter.stop();
+
+				Bukkit.getScheduler().runTaskLater(Skript.this, () -> {
+					if (TestMode.ENABLED) { // Ignore late init (scripts, etc.) in test mode
+						if (TestMode.DEV_MODE) { // Run tests NOW!
+							info("Test development mode enabled. Test scripts are at " + TestMode.TEST_DIR);
+						} else {
+							info("Running all tests from " + TestMode.TEST_DIR);
+
+							// Treat parse errors as fatal testing failure
+							@SuppressWarnings("null")
+							CountingLogHandler errorCounter = new CountingLogHandler(Level.SEVERE);
+							try {
+								errorCounter.start();
+								File testDir = TestMode.TEST_DIR.toFile();
+								assert testDir != null;
+								List<Config> configs = ScriptLoader.loadStructures(testDir);
+								ScriptLoader.loadScripts(configs, errorCounter).join();
+							} finally {
+								errorCounter.stop();
+							}
+
+							Bukkit.getPluginManager().callEvent(new SkriptTestEvent());
+
+							info("Collecting results to " + TestMode.RESULTS_FILE);
+							if (errorCounter.getCount() > 0) {
+								TestTracker.testStarted("parse scripts");
+								TestTracker.testFailed(errorCounter.getCount() + " error(s) found");
+							}
+							if (errored) { // Check for exceptions thrown while script was executing
+								TestTracker.testStarted("run scripts");
+								TestTracker.testFailed("exception was thrown during execution");
+							}
+							String results = new Gson().toJson(TestTracker.collectResults());
+							try {
+								Files.write(TestMode.RESULTS_FILE, results.getBytes(StandardCharsets.UTF_8));
+							} catch (IOException e) {
+								Skript.exception(e, "Failed to write test results.");
+							}
+							info("Testing done, shutting down the server.");
+							Bukkit.getServer().shutdown();
 						}
-						
-						Bukkit.getPluginManager().callEvent(new SkriptTestEvent());
-						
-						info("Collecting results to " + TestMode.RESULTS_FILE);
-						if (errorCounter.getCount() > 0) {
-							TestTracker.testStarted("parse scripts");
-							TestTracker.testFailed(errorCounter.getCount() + " error(s) found");
-						}
-						if (errored) { // Check for exceptions thrown while script was executing
-							TestTracker.testStarted("run scripts");
-							TestTracker.testFailed("exception was thrown during execution");
-						}
-						String results = new Gson().toJson(TestTracker.collectResults());
-						try {
-							Files.write(TestMode.RESULTS_FILE, results.getBytes(StandardCharsets.UTF_8));
-						} catch (IOException e) {
-							Skript.exception(e, "Failed to write test results.");
-						}
-						info("Testing done, shutting down the server.");
-						Bukkit.getServer().shutdown();
+
+						return;
 					}
-					
-					return;
-				}
+				}, 100);
 				
 				final long vld = System.currentTimeMillis() - vls;
 				if (logNormal())
@@ -1203,12 +1214,14 @@ public final class Skript extends JavaPlugin implements Listener {
 	private static boolean acceptRegistrations = true;
 	
 	public static boolean isAcceptRegistrations() {
-		return acceptRegistrations;
+		if (instance == null)
+			throw new IllegalStateException("Skript was never loaded");
+		return acceptRegistrations && instance.isEnabled();
 	}
 	
 	public static void checkAcceptRegistrations() {
-		if (!acceptRegistrations)
-			throw new SkriptAPIException("Registering is disabled after initialisation!");
+		if (!isAcceptRegistrations())
+			throw new SkriptAPIException("Registration can only be done during plugin initialization");
 	}
 	
 	private static void stopAcceptingRegistrations() {
