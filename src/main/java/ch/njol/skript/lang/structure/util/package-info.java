@@ -16,39 +16,12 @@
  *
  * Copyright Peter Güttinger, SkriptLang team and contributors
  */
-package ch.njol.util.coll.iterator;
-
-import java.util.Iterator;
-import java.util.function.Consumer;
-
 /**
- * An {@link Iterator} that also calls {@link Consumer#accept(Object)} on each object provided by the given {@link Iterator}.
+ * @author Peter Güttinger
  */
-public class ConsumingIterator<E> implements Iterator<E> {
+@NonNullByDefault({DefaultLocation.PARAMETER, DefaultLocation.RETURN_TYPE, DefaultLocation.FIELD})
+package ch.njol.skript.lang.structure.util;
 
-	private final Iterator<E> iterator;
-	private final Consumer<E> consumer;
+import org.eclipse.jdt.annotation.DefaultLocation;
+import org.eclipse.jdt.annotation.NonNullByDefault;
 
-	public ConsumingIterator(Iterator<E> iterator, Consumer<E> consumer) {
-		this.iterator = iterator;
-		this.consumer = consumer;
-	}
-
-	@Override
-	public boolean hasNext() {
-		return iterator.hasNext();
-	}
-
-	@Override
-	public E next() {
-		E value = iterator.next();
-		consumer.accept(value);
-		return value;
-	}
-
-	@Override
-	public void remove() {
-		iterator.remove();
-	}
-
-}

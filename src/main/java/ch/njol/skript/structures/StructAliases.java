@@ -25,7 +25,8 @@ import ch.njol.skript.config.Config;
 import ch.njol.skript.config.SectionNode;
 import ch.njol.skript.lang.Literal;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
-import ch.njol.skript.lang.Structure;
+import ch.njol.skript.lang.structure.EntryContainer;
+import ch.njol.skript.lang.structure.Structure;
 import ch.njol.skript.lang.parser.ParserInstance;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
@@ -43,7 +44,8 @@ public class StructAliases extends Structure {
 	private ScriptAliases aliases;
 
 	@Override
-	public boolean init(Literal<?>[] args, int matchedPattern, ParseResult parseResult, SectionNode node) {
+	public boolean init(Literal<?>[] args, int matchedPattern, ParseResult parseResult, EntryContainer entryContainer) {
+		SectionNode node = entryContainer.getSource();
 		node.convertToEntries(0, "=");
 
 		// Initialize and load script aliases

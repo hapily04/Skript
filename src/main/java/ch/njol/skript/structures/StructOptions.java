@@ -24,7 +24,8 @@ import ch.njol.skript.config.Node;
 import ch.njol.skript.config.SectionNode;
 import ch.njol.skript.lang.Literal;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
-import ch.njol.skript.lang.Structure;
+import ch.njol.skript.lang.structure.EntryContainer;
+import ch.njol.skript.lang.structure.Structure;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,7 +43,8 @@ public class StructOptions extends Structure {
 	private final Map<String, String> options = new HashMap<>();
 
 	@Override
-	public boolean init(Literal<?>[] args, int matchedPattern, ParseResult parseResult, SectionNode node) {
+	public boolean init(Literal<?>[] args, int matchedPattern, ParseResult parseResult, EntryContainer entryContainer) {
+		SectionNode node = entryContainer.getSource();
 		node.convertToEntries(-1);
 		loadOptions(node, "");
 		registerOptions();

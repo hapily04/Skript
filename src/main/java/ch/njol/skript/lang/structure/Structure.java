@@ -16,22 +16,34 @@
  *
  * Copyright Peter Güttinger, SkriptLang team and contributors
  */
-package ch.njol.skript.lang;
+package ch.njol.skript.lang.structure;
 
 import ch.njol.skript.Skript;
 import ch.njol.skript.config.Config;
+import ch.njol.skript.config.Node;
 import ch.njol.skript.config.SectionNode;
+import ch.njol.skript.lang.Debuggable;
+import ch.njol.skript.lang.Expression;
+import ch.njol.skript.lang.Literal;
+import ch.njol.skript.lang.ParseContext;
+import ch.njol.skript.lang.SelfRegisteringSkriptEvent;
+import ch.njol.skript.lang.SkriptParser;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
+import ch.njol.skript.lang.SyntaxElement;
+import ch.njol.skript.lang.Trigger;
 import ch.njol.skript.lang.parser.ParserInstance;
 import ch.njol.skript.log.ParseLogHandler;
 import ch.njol.skript.log.SkriptLogger;
 import ch.njol.util.Kleenean;
+import ch.njol.util.NonNullPair;
 import ch.njol.util.coll.iterator.ConsumingIterator;
 import org.eclipse.jdt.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -69,17 +81,27 @@ public abstract class Structure implements SyntaxElement, Debuggable {
 
 		Literal<?>[] literals = Arrays.copyOf(exprs, exprs.length, Literal[].class);
 
-		return init(literals, matchedPattern, parseResult, structureData.sectionNode);
+		StructureInfo<? extends Structure> structureInfo = structureData.structureInfo;
+		assert structureInfo != null;
+		if (structureInfo.skipEntryParsing) { // No validation necessary, the structure itself will handle it
+			List<Node> unhandledNodes = new ArrayList<>();
+			for (Node node : structureData.sectionNode) // All nodes are unhandled
+				unhandledNodes.add(node);
+			return init(literals, matchedPattern, parseResult, new EntryContainer(structureData.sectionNode, null, unhandledNodes));
+		}
+
+		StructureEntryValidator entryValidator = structureInfo.entryValidator;
+		assert entryValidator != null;
+		NonNullPair<Boolean, List<Node>> validated = entryValidator.validate(structureData.sectionNode);
+		if (!validated.getFirst())
+			return false;
+		return init(literals, matchedPattern, parseResult, new EntryContainer(structureData.sectionNode, entryValidator, validated.getSecond()));
 	}
 
-	/**
-	 * This method is the same as {@link SyntaxElement#init(Expression[], int, Kleenean, ParseResult)}, except
-	 * the structure's {@link SectionNode} is also passed to this method.
-	 */
 	public abstract boolean init(Literal<?>[] args,
 								 int matchedPattern,
 								 ParseResult parseResult,
-								 SectionNode node);
+								 EntryContainer entryContainer);
 
 	public void preload() {
 
@@ -121,9 +143,9 @@ public abstract class Structure implements SyntaxElement, Debuggable {
 	public static Structure parse(String expr, SectionNode sectionNode, @Nullable String defaultError) {
 		Structure.setNode(sectionNode);
 
-		Iterator<SyntaxElementInfo<? extends Structure>> iterator =
+		Iterator<StructureInfo<? extends Structure>> iterator =
 			new ConsumingIterator<>(Skript.getStructures().iterator(),
-				elementInfo -> ParserInstance.get().getData(StructureData.class).syntaxElementInfo = elementInfo);
+				elementInfo -> ParserInstance.get().getData(StructureData.class).structureInfo = elementInfo);
 
 		ParseLogHandler parseLogHandler = SkriptLogger.startParseLogHandler();
 		try {
@@ -152,15 +174,15 @@ public abstract class Structure implements SyntaxElement, Debuggable {
 	public static class StructureData extends ParserInstance.Data {
 		private SectionNode sectionNode;
 		@Nullable
-		private SyntaxElementInfo<? extends Structure> syntaxElementInfo;
+		private StructureInfo<? extends Structure> structureInfo;
 
 		public StructureData(ParserInstance parserInstance) {
 			super(parserInstance);
 		}
 
 		@Nullable
-		public SyntaxElementInfo<? extends Structure> getSyntaxElementInfo() {
-			return syntaxElementInfo;
+		public StructureInfo<? extends Structure> getStructureInfo() {
+			return structureInfo;
 		}
 	}
 

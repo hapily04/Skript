@@ -26,7 +26,8 @@ import ch.njol.skript.command.ScriptCommand;
 import ch.njol.skript.config.SectionNode;
 import ch.njol.skript.lang.Literal;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
-import ch.njol.skript.lang.Structure;
+import ch.njol.skript.lang.structure.EntryContainer;
+import ch.njol.skript.lang.structure.Structure;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,13 +39,14 @@ public class StructCommand extends Structure {
 		Skript.registerStructure(StructCommand.class, "command <.+>");
 	}
 
+	@SuppressWarnings("NotNullFieldNotInitialized")
 	private SectionNode sectionNode;
 	@Nullable
 	private ScriptCommand command;
 
 	@Override
-	public boolean init(Literal<?>[] args, int matchedPattern, ParseResult parseResult, SectionNode node) {
-		this.sectionNode = node;
+	public boolean init(Literal<?>[] args, int matchedPattern, ParseResult parseResult, EntryContainer entryContainer) {
+		this.sectionNode = entryContainer.getSource();
 
 		return true;
 	}

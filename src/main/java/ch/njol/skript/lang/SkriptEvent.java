@@ -25,6 +25,7 @@ import ch.njol.skript.SkriptEventHandler;
 import ch.njol.skript.config.SectionNode;
 import ch.njol.skript.events.EvtClick;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
+import ch.njol.skript.lang.structure.Structure;
 import ch.njol.util.StringUtils;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventPriority;
@@ -87,7 +88,7 @@ public abstract class SkriptEvent extends Structure {
 
 		this.expr = parseResult.expr = expr;
 
-		SyntaxElementInfo<? extends Structure> syntaxElementInfo = getParser().getData(StructureData.class).getSyntaxElementInfo();
+		SyntaxElementInfo<? extends Structure> syntaxElementInfo = getParser().getData(StructureData.class).getStructureInfo();
 		if (!(syntaxElementInfo instanceof SkriptEventInfo))
 			throw new IllegalStateException();
 		skriptEventInfo = (SkriptEventInfo<?>) syntaxElementInfo;

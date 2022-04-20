@@ -46,10 +46,12 @@ import ch.njol.skript.lang.Section;
 import ch.njol.skript.lang.SkriptEvent;
 import ch.njol.skript.lang.SkriptEventInfo;
 import ch.njol.skript.lang.Statement;
-import ch.njol.skript.lang.Structure;
+import ch.njol.skript.lang.structure.Structure;
 import ch.njol.skript.lang.SyntaxElementInfo;
 import ch.njol.skript.lang.Trigger;
 import ch.njol.skript.lang.TriggerItem;
+import ch.njol.skript.lang.structure.StructureEntryValidator;
+import ch.njol.skript.lang.structure.StructureInfo;
 import ch.njol.skript.lang.util.SimpleExpression;
 import ch.njol.skript.localization.Language;
 import ch.njol.skript.localization.Message;
@@ -1396,7 +1398,7 @@ public final class Skript extends JavaPlugin implements Listener {
 	
 	// ================ EVENTS ================
 
-	private static final List<SyntaxElementInfo<? extends Structure>> structures = new ArrayList<>(10);
+	private static final List<StructureInfo<? extends Structure>> structures = new ArrayList<>(10);
 	
 	/**
 	 * Registers an event.
@@ -1438,7 +1440,14 @@ public final class Skript extends JavaPlugin implements Listener {
 	public static <E extends Structure> void registerStructure(Class<E> c, String... patterns) {
 		checkAcceptRegistrations();
 		String originClassPath = Thread.currentThread().getStackTrace()[2].getClassName();
-		SyntaxElementInfo<E> structureInfo = new SyntaxElementInfo<>(patterns, c, originClassPath);
+		StructureInfo<E> structureInfo = new StructureInfo<>(patterns, c, originClassPath);
+		structures.add(structureInfo);
+	}
+
+	public static <E extends Structure> void registerStructure(Class<E> c, StructureEntryValidator entryValidator, String... patterns) {
+		checkAcceptRegistrations();
+		String originClassPath = Thread.currentThread().getStackTrace()[2].getClassName();
+		StructureInfo<E> structureInfo = new StructureInfo<>(patterns, c, originClassPath, entryValidator);
 		structures.add(structureInfo);
 	}
 
@@ -1453,7 +1462,7 @@ public final class Skript extends JavaPlugin implements Listener {
 			.collect(Collectors.toList());
 	}
 
-	public static List<SyntaxElementInfo<? extends Structure>> getStructures() {
+	public static List<StructureInfo<? extends Structure>> getStructures() {
 		return structures;
 	}
 

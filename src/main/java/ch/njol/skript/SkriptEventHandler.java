@@ -19,12 +19,11 @@
 package ch.njol.skript;
 
 import ch.njol.skript.ScriptLoader.ScriptInfo;
-import ch.njol.skript.command.Commands;
 import ch.njol.skript.config.Config;
 import ch.njol.skript.lang.SelfRegisteringSkriptEvent;
 import ch.njol.skript.lang.Trigger;
 import ch.njol.skript.lang.parser.ParserInstance;
-import ch.njol.skript.lang.Structure;
+import ch.njol.skript.lang.structure.Structure;
 import ch.njol.skript.timings.SkriptTimings;
 import ch.njol.util.NonNullPair;
 import org.bukkit.Bukkit;

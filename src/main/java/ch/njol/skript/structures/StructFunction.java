@@ -22,7 +22,8 @@ import ch.njol.skript.Skript;
 import ch.njol.skript.config.SectionNode;
 import ch.njol.skript.lang.Literal;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
-import ch.njol.skript.lang.Structure;
+import ch.njol.skript.lang.structure.EntryContainer;
+import ch.njol.skript.lang.structure.Structure;
 import ch.njol.skript.lang.function.FunctionEvent;
 import ch.njol.skript.lang.function.Functions;
 import ch.njol.skript.lang.function.Signature;
@@ -37,13 +38,14 @@ public class StructFunction extends Structure {
 		Skript.registerStructure(StructFunction.class, "function <.+>");
 	}
 
+	@SuppressWarnings("NotNullFieldNotInitialized")
 	private SectionNode node;
 	@Nullable
 	private Signature<?> signature;
 
 	@Override
-	public boolean init(Literal<?>[] args, int matchedPattern, ParseResult parseResult, SectionNode node) {
-		this.node = node;
+	public boolean init(Literal<?>[] args, int matchedPattern, ParseResult parseResult, EntryContainer entryContainer) {
+		this.node = entryContainer.getSource();
 		return true;
 	}
 
