@@ -58,7 +58,13 @@ public abstract class KeyValueStructureEntryData<T> extends StructureEntryData<T
 
 	@Override
 	public boolean canCreateWith(Node node) {
-		return node instanceof SimpleNode && super.canCreateWith(node);
+		if (!(node instanceof SimpleNode))
+			return false;
+		String key = node.getKey();
+		if (key == null)
+			return false;
+		key = ScriptLoader.replaceOptions(key);
+		return key.startsWith(getKey() + getSeparator());
 	}
 
 }

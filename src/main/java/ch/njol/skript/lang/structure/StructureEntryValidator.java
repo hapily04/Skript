@@ -18,7 +18,6 @@
  */
 package ch.njol.skript.lang.structure;
 
-import ch.njol.skript.ScriptLoader;
 import ch.njol.skript.Skript;
 import ch.njol.skript.config.Node;
 import ch.njol.skript.config.SectionNode;
@@ -28,9 +27,7 @@ import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class StructureEntryValidator {
 
@@ -38,10 +35,10 @@ public class StructureEntryValidator {
 		return new StructureEntryValidatorBuilder();
 	}
 
-	private final Map<String, StructureEntryData<?>> entryDataMap;
+	private final List<StructureEntryData<?>> entryDataMap;
 	private final boolean allowUnknownEntries, allowUnknownSections;
 
-	private StructureEntryValidator(Map<String, StructureEntryData<?>> entryDataMap, boolean allowUnknownEntries, boolean allowUnknownSections) {
+	private StructureEntryValidator(List<StructureEntryData<?>> entryDataMap, boolean allowUnknownEntries, boolean allowUnknownSections) {
 		this.entryDataMap = entryDataMap;
 		this.allowUnknownEntries = allowUnknownEntries;
 		this.allowUnknownSections = allowUnknownSections;
@@ -57,16 +54,22 @@ public class StructureEntryValidator {
 
 	public NonNullPair<Boolean, List<Node>> validate(SectionNode sectionNode) {
 
-		List<StructureEntryData<?>> entries = new ArrayList<>(entryDataMap.values());
+		List<StructureEntryData<?>> entries = new ArrayList<>(entryDataMap);
 		List<Node> unhandledNodes = new ArrayList<>();
 
 		boolean ok = true;
 		for (Node node : sectionNode) {
-			String key = node.getKey();
-			if (key == null)
+			if (node.getKey() == null)
 				continue;
-			key = ScriptLoader.replaceOptions(key);
-			StructureEntryData<?> entryData = entryDataMap.get(key);
+
+			StructureEntryData<?> entryData = null;
+			for (StructureEntryData<?> data : entryDataMap) {
+				if (data.canCreateWith(node)) { // Determine if it's a match
+					entryData = data;
+					break;
+				}
+			}
+
 			if (entryData == null) { // Key isn't registered with the validator
 				if ((!allowUnknownEntries && node instanceof SimpleNode) ||
 					(!allowUnknownSections && node instanceof SectionNode)
@@ -76,9 +79,6 @@ public class StructureEntryValidator {
 				} else {
 					unhandledNodes.add(node);
 				}
-			} else if (!entryData.canCreateWith(node)) { // TODO better error
-				ok = false;
-				Skript.error("Unexpected entry '" + node.getKey() + "'");
 			} else { // We have checked this data successfully
 				entries.remove(entryData);
 			}
@@ -103,7 +103,7 @@ public class StructureEntryValidator {
 			nodes.add(node);
 
 		int pos = 0;
-		for (StructureEntryData<?> entryData : entryDataMap.values()) {
+		for (StructureEntryData<?> entryData : entryDataMap) {
 			String key = entryData.getKey();
 
 			Node foundNode = null;
@@ -136,7 +136,7 @@ public class StructureEntryValidator {
 
 		private StructureEntryValidatorBuilder() { }
 
-		private final Map<String, StructureEntryData<?>> entryDataMap = new HashMap<>();
+		private final List<StructureEntryData<?>> entryData = new ArrayList<>();
 		private String entrySeparator = DEFAULT_ENTRY_SEPARATOR;
 		private boolean allowUnknownEntries, allowUnknownSections;
 
@@ -160,7 +160,7 @@ public class StructureEntryValidator {
 		}
 
 		public StructureEntryValidatorBuilder addEntry(String key, String defaultValue) {
-			entryDataMap.put(key, new KeyValueStructureEntryData<String>(key, defaultValue) {
+			entryData.add(new KeyValueStructureEntryData<String>(key, defaultValue) {
 				@Override
 				public String getValue(String value) {
 					return value;
@@ -175,7 +175,7 @@ public class StructureEntryValidator {
 		}
 
 		public StructureEntryValidatorBuilder addEntry(String key, boolean optional) {
-			entryDataMap.put(key, new KeyValueStructureEntryData<String>(key, optional) {
+			entryData.add(new KeyValueStructureEntryData<String>(key, optional) {
 				@Override
 				public String getValue(String value) {
 					return value;
@@ -194,17 +194,17 @@ public class StructureEntryValidator {
 		}
 
 		public StructureEntryValidatorBuilder addSection(String key, boolean optional) {
-			entryDataMap.put(key, new SectionStructureEntryData(key, optional));
+			entryData.add(new SectionStructureEntryData(key, optional));
 			return this;
 		}
 
 		public StructureEntryValidatorBuilder addEntryData(StructureEntryData<?> entryData) {
-			entryDataMap.put(entryData.getKey(), entryData);
+			this.entryData.add(entryData);
 			return this;
 		}
 
 		public StructureEntryValidator build() {
-			return new StructureEntryValidator(entryDataMap, allowUnknownEntries, allowUnknownSections);
+			return new StructureEntryValidator(entryData, allowUnknownEntries, allowUnknownSections);
 		}
 
 	}
