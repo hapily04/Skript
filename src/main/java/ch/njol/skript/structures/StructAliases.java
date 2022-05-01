@@ -50,23 +50,32 @@ public class StructAliases extends Structure {
 
 		// Initialize and load script aliases
 		aliases = Aliases.createScriptAliases();
-		Aliases.setScriptAliases(aliases);
+		registerAliases();
 		aliases.parser.load(node);
 		return true;
 	}
 
 	@Override
 	public void preload() {
-		Aliases.setScriptAliases(aliases);
+		registerAliases();
 	}
 
 	@Override
 	public void load() {
-		Aliases.setScriptAliases(aliases);
+		registerAliases();
 	}
 
 	@Override
 	public void afterLoad() {
+		registerAliases();
+	}
+
+	@Override
+	public void unload() {
+		Aliases.setScriptAliases(null);
+	}
+
+	private void registerAliases() {
 		Aliases.setScriptAliases(aliases);
 	}
 
