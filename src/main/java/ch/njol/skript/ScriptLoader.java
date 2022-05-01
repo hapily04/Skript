@@ -566,8 +566,7 @@ public class ScriptLoader {
 		try {
 			if (SkriptConfig.keepConfigsLoaded.value())
 				SkriptConfig.configs.add(config);
-			
-			getParser().getCurrentOptions().clear();
+
 			getParser().setCurrentScript(config);
 			
 			try (CountingLogHandler ignored = new CountingLogHandler(SkriptLogger.SEVERE).start()) {

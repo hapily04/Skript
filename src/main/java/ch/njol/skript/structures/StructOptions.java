@@ -19,11 +19,13 @@
 package ch.njol.skript.structures;
 
 import ch.njol.skript.Skript;
+import ch.njol.skript.config.Config;
 import ch.njol.skript.config.EntryNode;
 import ch.njol.skript.config.Node;
 import ch.njol.skript.config.SectionNode;
 import ch.njol.skript.lang.Literal;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
+import ch.njol.skript.lang.parser.ParserInstance;
 import ch.njol.skript.lang.structure.EntryContainer;
 import ch.njol.skript.lang.structure.Structure;
 import org.bukkit.event.Event;
@@ -38,6 +40,7 @@ public class StructOptions extends Structure {
 
 	static {
 		Skript.registerStructure(StructOptions.class, "options");
+		ParserInstance.registerData(OptionsData.class, OptionsData::new);
 	}
 
 	private final Map<String, String> options = new HashMap<>();
@@ -49,16 +52,6 @@ public class StructOptions extends Structure {
 		loadOptions(node, "");
 		registerOptions();
 		return true;
-	}
-
-	@Override
-	public void preload() {
-		registerOptions();
-	}
-
-	@Override
-	public void load() {
-		registerOptions();
 	}
 
 	private void loadOptions(SectionNode sectionNode, String prefix) {
@@ -73,7 +66,28 @@ public class StructOptions extends Structure {
 		}
 	}
 
+	@Override
+	public void preload() {
+		registerOptions();
+	}
+
+	@Override
+	public void load() {
+		registerOptions();
+	}
+
+	@Override
+	public void afterLoad() {
+		registerOptions();
+	}
+
+	@Override
+	public void unload() {
+		getParser().getCurrentOptions().clear();
+	}
+
 	private void registerOptions() {
+		unload();
 		getParser().getCurrentOptions().putAll(options);
 	}
 
@@ -85,6 +99,17 @@ public class StructOptions extends Structure {
 	@Override
 	public String toString(@Nullable Event e, boolean debug) {
 		return "options";
+	}
+
+	public static class OptionsData extends ParserInstance.Data {
+		public OptionsData(ParserInstance parserInstance) {
+			super(parserInstance);
+		}
+
+		@Override
+		public void onCurrentScriptChange(@Nullable Config oldConfig, @Nullable Config newConfig) {
+			getParser().getCurrentOptions().clear();
+		}
 	}
 
 }
