@@ -25,6 +25,7 @@ import ch.njol.skript.SkriptEventHandler;
 import ch.njol.skript.config.SectionNode;
 import ch.njol.skript.events.EvtClick;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
+import ch.njol.skript.lang.structure.EntryContainer;
 import ch.njol.skript.lang.structure.Structure;
 import ch.njol.util.StringUtils;
 import org.bukkit.event.Event;
@@ -60,8 +61,8 @@ public abstract class SkriptEvent extends Structure {
 	private List<TriggerItem> items;
 
 	@Override
-	public final boolean init(Literal<?>[] args, int matchedPattern, ParseResult parseResult, SectionNode node) {
-		this.node = node;
+	public final boolean init(Literal<?>[] args, int matchedPattern, ParseResult parseResult, EntryContainer container) {
+		this.node = container.getSource();
 
 		String expr = parseResult.expr;
 		if (StringUtils.startsWithIgnoreCase(expr, "on "))
