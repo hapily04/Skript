@@ -30,9 +30,13 @@ import ch.njol.skript.lang.function.Signature;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class StructFunction extends Structure {
 
 	public static final Priority PRIORITY = new Priority(400);
+
+	private static final AtomicBoolean validateFunctions = new AtomicBoolean();
 
 	static {
 		Skript.registerStructure(StructFunction.class, "function <.+>");
@@ -63,13 +67,23 @@ public class StructFunction extends Structure {
 		Functions.loadFunction(node);
 
 		getParser().deleteCurrentEvent();
+
+		validateFunctions.set(true);
+	}
+
+	@Override
+	public void afterLoad() {
+		if (validateFunctions.get()) {
+			validateFunctions.set(false);
+			Functions.validateFunctions();
+		}
 	}
 
 	@Override
 	public void unload() {
-		if (signature != null) {
+		if (signature != null)
 			Functions.unregisterFunction(signature);
-		}
+		validateFunctions.set(true);
 	}
 
 	@Override

@@ -28,7 +28,6 @@ import ch.njol.skript.lang.SkriptParser;
 import ch.njol.skript.lang.Statement;
 import ch.njol.skript.lang.TriggerItem;
 import ch.njol.skript.lang.TriggerSection;
-import ch.njol.skript.lang.function.Functions;
 import ch.njol.skript.lang.parser.ParserInstance;
 import ch.njol.skript.lang.structure.Structure;
 import ch.njol.skript.localization.Message;
@@ -90,7 +89,7 @@ public class ScriptLoader {
 		new PluralizingArgsMessage("skript.scripts loaded");
 	
 	/**
-	 * Clears triggers, commands, functions and variable names
+	 * Disables all scripts by unloading all structures.
 	 */
 	static void disableScripts() {
 		SkriptEventHandler.removeAllTriggers();
@@ -101,22 +100,18 @@ public class ScriptLoader {
 	 * <ul>
 	 *     <li>The amount of files</li>
 	 *     <li>The amount of triggers</li>
-	 *     <li>The amount of commands</li>
-	 *     <li>The amount of functions</li>
-	 *     <li>The names of the declared commands</li>
 	 * </ul>
 	 */
 	public static class ScriptInfo {
-		public int files, triggers, functions;
+		public int files, triggers;
 
 		public ScriptInfo() {
 
 		}
 		
-		public ScriptInfo(int numFiles, int numTriggers, int numFunctions) {
+		public ScriptInfo(int numFiles, int numTriggers) {
 			files = numFiles;
 			triggers = numTriggers;
-			functions = numFunctions;
 		}
 		
 		/**
@@ -126,24 +121,21 @@ public class ScriptLoader {
 		public ScriptInfo(ScriptInfo other) {
 			files = other.files;
 			triggers = other.triggers;
-			functions = other.functions;
 		}
 		
 		public void add(ScriptInfo other) {
 			files += other.files;
 			triggers += other.triggers;
-			functions += other.functions;
 		}
 		
 		public void subtract(ScriptInfo other) {
 			files -= other.files;
 			triggers -= other.triggers;
-			functions -= other.functions;
 		}
 		
 		@Override
 		public String toString() {
-			return "ScriptInfo{files=" + files + ",triggers=" + triggers + ",functions:" + functions + "}";
+			return "ScriptInfo{files=" + files + ",triggers=" + triggers + "}";
 		}
 	}
 
@@ -440,9 +432,7 @@ public class ScriptLoader {
 						if (script == null)
 							throw new NullPointerException();
 
-						// TODO functions internalized
-						// Use internal unload method which does not call validateFunctions()
-						unloadScript_(script);
+						unloadScript(script);
 						String name = Skript.getInstance().getDataFolder().toPath().toAbsolutePath()
 							.resolve(Skript.SCRIPTSFOLDER).relativize(script.toPath()).toString();
 						assert name != null;
@@ -526,9 +516,6 @@ public class ScriptLoader {
 							structure.afterLoad();
 					}
 
-					// TODO STRUCTURE functions internalized
-					Functions.validateFunctions();
-
 					// TODO STRUCTURE events internalized
 					SkriptEventHandler.registerBukkitEvents();
 
@@ -544,8 +531,7 @@ public class ScriptLoader {
 	}
 
 	/**
-	 * Loads one script. Only for internal use, as this doesn't register/update
-	 * event handlers.
+	 * Loads one script. Only for internal use, as this doesn't register/update event handlers.
 	 * @param config Config for script to be loaded.
 	 * @return Info about script that is loaded
 	 */
@@ -619,7 +605,7 @@ public class ScriptLoader {
 			File file = config.getFile();
 			if (isAsync()) {
 				if (file != null)
-					unloadScript_(file);
+					unloadScript(file);
 			}
 			
 			// Remove the script from the disabled scripts list
@@ -648,18 +634,20 @@ public class ScriptLoader {
 	/*
 	 * Structure loading methods
 	 */
+
 	/**
-	 * Loads structures of specified scripts.
-	 *
-	 * @param files the scripts to load
+	 * Creates a script structure for every provided file.
+	 * @param files The files to create structures from.
+	 * @see ScriptLoader#loadStructure(File)
+	 * @return A list of all successfully loaded structures.
 	 */
 	public static List<Config> loadStructures(File[] files) {
 		Arrays.sort(files);
 		
 		List<Config> loadedFiles = new ArrayList<>(files.length);
-		for (File f : files) {
-			assert f != null : Arrays.toString(files);
-			Config config = loadStructure(f);
+		for (File file : files) {
+			assert file != null : Arrays.toString(files);
+			Config config = loadStructure(file);
 			if (config != null)
 				loadedFiles.add(config);
 		}
@@ -668,10 +656,11 @@ public class ScriptLoader {
 	}
 	
 	/**
-	 * Loads structures of all scripts in the given directory, or of the passed script if it's a normal file.
-	 *
-	 * @param directory a directory or a single file
-	 * @see #loadStructure(File).
+	 * Creates a script structure for every file contained within the provided directory.
+	 * If a directory is not actually provided, the file itself will be used.
+	 * @param directory The directory to create structures from.
+	 * @see ScriptLoader#loadStructure(File)
+	 * @return A list of all successfully loaded structures.
 	 */
 	public static List<Config> loadStructures(File directory) {
 		if (!directory.isDirectory()) {
@@ -696,37 +685,37 @@ public class ScriptLoader {
 	}
 	
 	/**
-	 * // TODO STRUCTURE functions internalized
-	 * Loads structure of given script, currently only for functions. Must be called before
-	 * actually loading that script.
-	 * @param f Script file.
+	 * Creates a script structure from the provided file.
+	 * This must be done before actually loading a script.
+	 * @param file The script to load the structure of.
+	 * @return The loaded structure or null if an error occurred.
 	 */
 	@SuppressWarnings("resource") // Stream is closed in Config constructor called in loadStructure
 	@Nullable
-	public static Config loadStructure(File f) {
-		if (!f.exists()) { // If file does not exist...
-			unloadScript(f); // ... it might be good idea to unload it now
+	public static Config loadStructure(File file) {
+		if (!file.exists()) { // If file does not exist...
+			unloadScript(file); // ... it might be good idea to unload it now
 			return null;
 		}
 		
 		try {
 			String name = Skript.getInstance().getDataFolder().toPath().toAbsolutePath()
-					.resolve(Skript.SCRIPTSFOLDER).relativize(f.toPath().toAbsolutePath()).toString();
+					.resolve(Skript.SCRIPTSFOLDER).relativize(file.toPath().toAbsolutePath()).toString();
 			assert name != null;
-			return loadStructure(new FileInputStream(f), name);
+			return loadStructure(new FileInputStream(file), name);
 		} catch (IOException e) {
-			Skript.error("Could not load " + f.getName() + ": " + ExceptionUtils.toString(e));
+			Skript.error("Could not load " + file.getName() + ": " + ExceptionUtils.toString(e));
 		}
 		
 		return null;
 	}
 	
 	/**
-	 * // TODO STRUCTURE functions internalized
-	 * Loads structure of given script, currently only for functions. Must be called before
-	 * actually loading that script.
+	 * Creates a script structure from the provided source.
+	 * This must be done before actually loading a script.
 	 * @param source Source input stream.
 	 * @param name Name of source "file".
+	 * @return The loaded structure or null if an error occurred.
 	 */
 	@Nullable
 	public static Config loadStructure(InputStream source, String name) {
@@ -749,61 +738,56 @@ public class ScriptLoader {
 	/*
 	 * Script unloading methods
 	 */
+
 	/**
-	 * Unloads the scripts in a folder.
-	 * @return The {@link ScriptInfo} of all unloaded scripts combined.
+	 * Unloads all scripts present in the provided folder.
+	 * @param folder The folder containing scripts to unload.
+	 * @return Combined statistics for the unloaded scripts.
+	 *         This data is calculated by using {@link ScriptInfo#add(ScriptInfo)}.
 	 */
 	private static ScriptInfo unloadScripts_(File folder) {
 		ScriptInfo info = new ScriptInfo();
-		for (File f : folder.listFiles(scriptFilter)) {
-			if (f.isDirectory()) {
-				info.add(unloadScripts_(f));
+		for (File file : folder.listFiles(scriptFilter)) {
+			if (file.isDirectory()) {
+				info.add(unloadScripts_(file));
 			} else {
-				info.add(unloadScript_(f));
+				info.add(unloadScript(file));
 			}
 		}
 		return info;
 	}
 	
 	/**
-	 * Unloads the specified script.
-	 *
-	 * @param script
-	 * @return Info on the unloaded script
+	 * Unloads the provided script.
+	 * @param script The file representing the script to unload.
+	 * @return Statistics for the unloaded script.
 	 */
 	public static ScriptInfo unloadScript(File script) {
-		ScriptInfo r = unloadScript_(script);
-		// TODO STRUCTURE functions internalized
-		Functions.validateFunctions();
-		return r;
-	}
-	
-	private static ScriptInfo unloadScript_(File script) {
 		if (loadedFiles.contains(script)) {
 			ScriptInfo info = SkriptEventHandler.removeTriggers(script); // Remove triggers
 			synchronized (loadedScripts) { // Update global script info
 				loadedScripts.subtract(info);
 			}
-			
+
 			loadedFiles.remove(script); // We just unloaded it, so...
 			disabledFiles.add(new File(script.getParentFile(), "-" + script.getName()));
 
 			// If unloading, our caller will do this immediately after we return
 			// However, if reloading, new version of this script is first loaded
 			String name = Skript.getInstance().getDataFolder().toPath().toAbsolutePath()
-					.resolve(Skript.SCRIPTSFOLDER).relativize(script.toPath().toAbsolutePath()).toString();
+				.resolve(Skript.SCRIPTSFOLDER).relativize(script.toPath().toAbsolutePath()).toString();
 			assert name != null;
-			
+
 			return info; // Return how much we unloaded
 		}
-		
+
 		return new ScriptInfo(); // Return that we unloaded literally nothing
 	}
-	
 	
 	/*
 	 * Script reloading methods
 	 */
+
 	/**
 	 * Reloads a single script.
 	 * @param script Script file.
@@ -811,7 +795,7 @@ public class ScriptLoader {
 	 */
 	public static CompletableFuture<ScriptInfo> reloadScript(File script, OpenCloseable openCloseable) {
 		if (!isAsync()) {
-			unloadScript_(script);
+			unloadScript(script);
 		}
 		Config config = loadStructure(script);
 		if (config == null)
@@ -836,8 +820,10 @@ public class ScriptLoader {
 	/*
 	 * Code loading methods
 	 */
+
 	/**
 	 * Replaces options in a string.
+	 * Options are gotten from {@link ParserInstance#getCurrentOptions()}.
 	 */
 	public static String replaceOptions(String s) {
 		String r = StringUtils.replaceAll(s, "\\{@(.+?)\\}", m -> {
@@ -910,12 +896,11 @@ public class ScriptLoader {
 	/*
 	 * Loaded script statistics
 	 */
-	@SuppressWarnings("null") // Collections methods don't return nulls, ever
+
 	public static Collection<File> getLoadedFiles() {
 		return Collections.unmodifiableCollection(loadedFiles);
 	}
-	
-	@SuppressWarnings("null")
+
 	public static Collection<File> getDisabledFiles() {
 		return Collections.unmodifiableCollection(disabledFiles);
 	}
@@ -923,12 +908,6 @@ public class ScriptLoader {
 	public static int loadedScripts() {
 		synchronized (loadedScripts) {
 			return loadedScripts.files;
-		}
-	}
-	
-	public static int loadedFunctions() {
-		synchronized (loadedScripts) {
-			return loadedScripts.functions;
 		}
 	}
 	
