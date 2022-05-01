@@ -146,7 +146,7 @@ public abstract class SkriptEvent extends Structure {
 			((SelfRegisteringSkriptEvent) this).register(trigger);
 			SkriptEventHandler.addSelfRegisteringTrigger(trigger);
 		} else {
-			SkriptEventHandler.addTrigger(getEventClasses(), trigger);
+			SkriptEventHandler.registerBukkitEvents(trigger, getEventClasses());
 		}
 
 		getParser().deleteCurrentEvent();

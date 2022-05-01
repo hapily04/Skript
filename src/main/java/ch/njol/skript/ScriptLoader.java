@@ -516,9 +516,6 @@ public class ScriptLoader {
 							structure.afterLoad();
 					}
 
-					// TODO STRUCTURE events internalized
-					SkriptEventHandler.registerBukkitEvents();
-
 					return scriptInfo;
 				} catch (Exception e) {
 					throw Skript.exception(e);

@@ -178,12 +178,6 @@ public abstract class SkriptEventHandler {
 			return;
 		Skript.info("# " + t.getName() + " took " + 1. * (System.nanoTime() - startTrigger) / 1000000. + " milliseconds");
 	}
-
-	public static void addTrigger(Class<? extends Event>[] events, Trigger trigger) {
-		for (Class<? extends Event> e : events) {
-			triggers.add(new NonNullPair<>(e, trigger));
-		}
-	}
 	
 	/**
 	 * Stores a self registered trigger to allow for it to be unloaded later on.
@@ -249,53 +243,47 @@ public abstract class SkriptEventHandler {
 				structure.unload();
 		structures.clear();
 	}
-	
-	/**
-	 * Registers event handlers for all events which currently loaded
-	 * triggers are using.
-	 */
-	@SuppressWarnings({"unchecked", "rawtypes"})
-	static void registerBukkitEvents() {
-		for (NonNullPair<Class<? extends Event>, Trigger> pair : triggers) {
-			assert pair.getFirst() != null;
-			Class<? extends Event> e = pair.getFirst();
-			
-			EventPriority priority;
-			priority = pair.getSecond().getEvent().getEventPriority();
-			
-			PriorityListener listener = listeners[priority.ordinal()];
-			EventExecutor executor = listener.executor;
-			
-			Set<Class<? extends Event>> registeredEvents = listener.registeredEvents;
-			
-			// PlayerInteractEntityEvent has a subclass we need for armor stands
-			if (e.equals(PlayerInteractEntityEvent.class)) {
-				if (!registeredEvents.contains(e)) {
-					registeredEvents.add(e);
-					Bukkit.getPluginManager().registerEvent(e, listener, priority, executor, Skript.getInstance());
-					Bukkit.getPluginManager().registerEvent(PlayerInteractAtEntityEvent.class, listener, priority, executor, Skript.getInstance());
-				}
-				continue;
-			}
-			if (e.equals(PlayerInteractAtEntityEvent.class) || e.equals(PlayerArmorStandManipulateEvent.class)) {
-				continue; // Ignore, registered above
-			}
-			
-			if (!containsSuperclass((Set) registeredEvents, e)) { // I just love Java's generics
-				Bukkit.getPluginManager().registerEvent(e, listener, priority, executor, Skript.getInstance());
-				registeredEvents.add(e);
-			}
-		}
+
+	public static void registerBukkitEvents(Trigger trigger, Class<? extends Event>[] events) {
+		for (Class<? extends Event> event : events)
+			registerBukkitEvent(trigger, event);
 	}
-	
-	public static boolean containsSuperclass(Set<Class<?>> classes, Class<?> c) {
-		if (classes.contains(c))
-			return true;
-		for (Class<?> cl : classes) {
-			if (cl.isAssignableFrom(c))
-				return true;
+
+	public static void registerBukkitEvent(Trigger trigger, Class<? extends Event> event) {
+		triggers.add(new NonNullPair<>(event, trigger));
+
+		EventPriority priority = trigger.getEvent().getEventPriority();
+
+		PriorityListener listener = listeners[priority.ordinal()];
+		EventExecutor executor = listener.executor;
+
+		Set<Class<? extends Event>> registeredEvents = listener.registeredEvents;
+
+		// PlayerInteractEntityEvent has a subclass we need for armor stands
+		if (event.equals(PlayerInteractEntityEvent.class)) {
+			if (!registeredEvents.contains(event)) {
+				registeredEvents.add(event);
+				Bukkit.getPluginManager().registerEvent(event, listener, priority, executor, Skript.getInstance());
+				Bukkit.getPluginManager().registerEvent(PlayerInteractAtEntityEvent.class, listener, priority, executor, Skript.getInstance());
+			}
+			return;
 		}
-		return false;
+
+		if (event.equals(PlayerInteractAtEntityEvent.class) || event.equals(PlayerArmorStandManipulateEvent.class)) {
+			return; // Ignore, registered above
+		}
+
+		// Check that we haven't already registered this event with Bukkit
+		// If we have registered it, there is no need to do so again
+		if (registeredEvents.contains(event))
+			return;
+		for (Class<?> cl : registeredEvents) {
+			if (cl.isAssignableFrom(event))
+				return;
+		}
+
+		Bukkit.getPluginManager().registerEvent(event, listener, priority, executor, Skript.getInstance());
+		registeredEvents.add(event);
 	}
 
 	/**
