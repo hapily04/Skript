@@ -34,7 +34,7 @@ import java.util.Map;
 
 public class StructOptions extends Structure {
 
-	public static final Priority PRIORITY = new Priority(10);
+	public static final Priority PRIORITY = new Priority(100);
 
 	static {
 		Skript.registerStructure(StructOptions.class, "options");

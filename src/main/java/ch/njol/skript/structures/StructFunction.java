@@ -32,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class StructFunction extends Structure {
 
-	public static final Priority PRIORITY = new Priority(30);
+	public static final Priority PRIORITY = new Priority(400);
 
 	static {
 		Skript.registerStructure(StructFunction.class, "function <.+>");

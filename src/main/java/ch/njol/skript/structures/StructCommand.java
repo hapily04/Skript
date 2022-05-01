@@ -59,7 +59,7 @@ import java.util.regex.Pattern;
 
 public class StructCommand extends Structure {
 
-	public static final Priority PRIORITY = new Priority(10);
+	public static final Priority PRIORITY = new Priority(500);
 
 	private static final Pattern
 		COMMAND_PATTERN = Pattern.compile("(?i)^command /?(\\S+)\\s*(\\s+(.+))?$"),

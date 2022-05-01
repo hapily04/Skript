@@ -44,6 +44,7 @@ import ch.njol.skript.util.SkriptColor;
 import ch.njol.skript.util.Task;
 import ch.njol.skript.variables.TypeHints;
 import ch.njol.util.Kleenean;
+import ch.njol.util.NonNullPair;
 import ch.njol.util.OpenCloseable;
 import ch.njol.util.StringUtils;
 import org.bukkit.Bukkit;
@@ -62,8 +63,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
@@ -73,6 +77,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 /**
  * The main class for loading, unloading and reloading scripts.
@@ -468,7 +473,7 @@ public class ScriptLoader {
 		
 		ScriptInfo scriptInfo = new ScriptInfo();
 
-		List<Structure> structures = new ArrayList<>();
+		Map<Config, List<Structure>> structures = new HashMap<>();
 
 		List<CompletableFuture<Void>> scriptInfoFutures = new ArrayList<>();
 		for (Config config : configs) {
@@ -478,8 +483,11 @@ public class ScriptLoader {
 			CompletableFuture<Void> future = makeFuture(() -> {
 				ScriptInfo info = loadScript(config);
 
-				structures.addAll(getParser().getLoadedStructures());
-				
+				structures.put(config, getParser().getLoadedStructures().stream()
+					.sorted(Comparator.comparing(Structure::getPriority))
+					.collect(Collectors.toList())
+				);
+
 				scriptInfo.add(info);
 				return null;
 			}, openCloseable);
@@ -491,16 +499,31 @@ public class ScriptLoader {
 			.thenApply(unused -> {
 				try {
 					openCloseable.open();
-					structures.stream()
-						.sorted(Comparator.comparing(Structure::getPriority))
-						.forEach(structure -> structure.runWithScript(Structure::preload));
 
-					for (Structure structure : structures) {
-						structure.runWithScript(Structure::load);
+					structures.entrySet().stream()
+						.flatMap(entry -> { // Flatten each entry down to a stream of Config-Structure pairs
+							Config config = entry.getKey();
+							return entry.getValue().stream()
+								.map(structure -> new NonNullPair<>(config, structure));
+						})
+						.sorted(Comparator.comparing(pair -> pair.getSecond().getPriority()))
+						.forEach(pair -> {
+							Config config = pair.getFirst();
+							if (getParser().getCurrentScript() != config)
+								getParser().setCurrentScript(config);
+							pair.getSecond().preload();
+						});
+
+					for (Entry<Config, List<Structure>> entry : structures.entrySet()) {
+						getParser().setCurrentScript(entry.getKey());
+						for (Structure structure : entry.getValue())
+							structure.load();
 					}
 
-					for (Structure structure : structures) {
-						structure.runWithScript(Structure::afterLoad);
+					for (Entry<Config, List<Structure>> entry : structures.entrySet()) {
+						getParser().setCurrentScript(entry.getKey());
+						for (Structure structure : entry.getValue())
+							structure.afterLoad();
 					}
 
 					// TODO STRUCTURE functions internalized

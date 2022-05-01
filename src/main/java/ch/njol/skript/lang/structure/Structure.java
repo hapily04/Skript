@@ -19,7 +19,6 @@
 package ch.njol.skript.lang.structure;
 
 import ch.njol.skript.Skript;
-import ch.njol.skript.config.Config;
 import ch.njol.skript.config.Node;
 import ch.njol.skript.config.SectionNode;
 import ch.njol.skript.lang.Debuggable;
@@ -42,19 +41,22 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.function.Consumer;
 
 // TODO STRUCTURE make sure options work everywhere (maybe have some structure validation in preload instead of init)
 // TODO STRUCTURE javadocs (everywhere)
 // TODO STRUCTURE add Structures to docs
 public abstract class Structure implements SyntaxElement, Debuggable {
 
-	// TODO STRUCTURE priorities
+	public static final Priority DEFAULT_PRIORITY = new Priority(100);
+
+	/**
+	 * Priorities are used to determine the order in which Structures should be loaded.
+	 * As the priority approaches 0, it becomes more important. Example:
+	 * priority of 1 (loads first), priority of 2 (loads second), priority of 3 (loads third)
+	 */
 	public static class Priority implements Comparable<Priority> {
 		private final int priority;
 
@@ -72,13 +74,8 @@ public abstract class Structure implements SyntaxElement, Debuggable {
 		}
 	}
 
-	@SuppressWarnings("NotNullFieldNotInitialized")
-	private Config script;
-
 	@Override
 	public final boolean init(Expression<?>[] exprs, int matchedPattern, Kleenean isDelayed, ParseResult parseResult) {
-		script = Objects.requireNonNull(getParser().getCurrentScript());
-
 		StructureData structureData = getParser().getData(StructureData.class);
 
 		Literal<?>[] literals = Arrays.copyOf(exprs, exprs.length, Literal[].class);
@@ -122,18 +119,13 @@ public abstract class Structure implements SyntaxElement, Debuggable {
 
 	}
 
-	public abstract Priority getPriority();
-
-	public void runWithScript(Consumer<Structure> consumer) {
-		try {
-			getParser().setCurrentScript(script);
-			consumer.accept(this);
-		} catch (Exception e) {
-			//noinspection ThrowableNotThrown
-			Skript.exception(e);
-		} finally {
-			getParser().setCurrentScript(null);
-		}
+	/**
+	 * The priority of a Structure determines the order in which it should be loaded.
+	 * For more information, see the javadoc of {@link Priority}.
+	 * @return The priority of this Structure. By default, this is {@link Structure#DEFAULT_PRIORITY}.
+	 */
+	public Priority getPriority() {
+		return DEFAULT_PRIORITY;
 	}
 
 	@Override

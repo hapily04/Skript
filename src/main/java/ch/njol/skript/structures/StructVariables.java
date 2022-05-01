@@ -44,7 +44,7 @@ import java.util.Locale;
 
 public class StructVariables extends Structure {
 
-	public static final Priority PRIORITY = new Priority(10);
+	public static final Priority PRIORITY = new Priority(300);
 
 	static {
 		Skript.registerStructure(StructVariables.class, "variables");

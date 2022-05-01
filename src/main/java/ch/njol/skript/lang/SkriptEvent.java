@@ -50,7 +50,7 @@ import java.util.Locale;
 @SuppressWarnings("NotNullFieldNotInitialized")
 public abstract class SkriptEvent extends Structure {
 
-	public static final Priority PRIORITY = new Priority(5);
+	public static final Priority PRIORITY = new Priority(600);
 
 	private String expr;
 	private SectionNode node;

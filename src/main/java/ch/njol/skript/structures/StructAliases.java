@@ -33,7 +33,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class StructAliases extends Structure {
 
-	public static final Priority PRIORITY = new Priority(10);
+	public static final Priority PRIORITY = new Priority(200);
 
 	static {
 		Skript.registerStructure(StructAliases.class, "aliases");
@@ -62,6 +62,11 @@ public class StructAliases extends Structure {
 
 	@Override
 	public void load() {
+		Aliases.setScriptAliases(aliases);
+	}
+
+	@Override
+	public void afterLoad() {
 		Aliases.setScriptAliases(aliases);
 	}
 
