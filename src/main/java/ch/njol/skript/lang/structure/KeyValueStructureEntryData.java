@@ -45,7 +45,10 @@ public abstract class KeyValueStructureEntryData<T> extends StructureEntryData<T
 		String key = node.getKey();
 		if (key == null)
 			return null;
-		return getValue(ScriptLoader.replaceOptions(key).substring(getKey().length() + getSeparator().length()));
+		T value = getValue(ScriptLoader.replaceOptions(key).substring(getKey().length() + getSeparator().length()));
+		if (value == null) // Attempt to fallback to default value
+			value = getDefaultValue();
+		return value;
 	}
 
 	@Nullable
