@@ -95,7 +95,7 @@ public abstract class SkriptEventHandler {
 	private static final HashMap<File, List<Structure>> structures = new HashMap<>();
 	
 	private static Iterator<Trigger> getTriggers(Class<? extends Event> event) {
-		return triggers.stream()
+		return new ArrayList<>(triggers).stream()
 			.filter(pair -> pair.getFirst().isAssignableFrom(event))
 			.map(NonNullPair::getSecond)
 			.iterator();
