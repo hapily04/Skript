@@ -20,21 +20,26 @@ package ch.njol.skript.lang.structure;
 
 import ch.njol.skript.config.Node;
 import ch.njol.skript.config.SectionNode;
-import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
 
 import java.util.List;
+import java.util.Map;
 
 public class EntryContainer {
 
 	private final SectionNode source;
 	@Nullable
 	private final StructureEntryValidator entryValidator;
+	@Nullable
+	private final Map<String, Node> handledNodes;
 	private final List<Node> unhandledNodes;
 
-	EntryContainer(SectionNode source, @Nullable StructureEntryValidator entryValidator, List<Node> unhandledNodes) {
+	EntryContainer(
+		SectionNode source, @Nullable StructureEntryValidator entryValidator, @Nullable Map<String, Node> handledNodes, List<Node> unhandledNodes)
+	{
 		this.source = source;
 		this.entryValidator = entryValidator;
+		this.handledNodes = handledNodes;
 		this.unhandledNodes = unhandledNodes;
 	}
 
@@ -47,10 +52,32 @@ public class EntryContainer {
 	}
 
 	@Nullable
-	public Object @NonNull [] getEntryValues() {
-		if (entryValidator == null)
-			return new Object[0];
-		return entryValidator.getValues(source);
+	public Object getParsed(String key) {
+		if (entryValidator == null || handledNodes == null)
+			return null;
+
+		StructureEntryData<?> entryData = null;
+		for (StructureEntryData<?> data : entryValidator.entryDataMap) {
+			if (data.getKey().equals(key)) {
+				entryData = data;
+				break;
+			}
+		}
+		if (entryData == null)
+			return null;
+
+		Node node = handledNodes.get(key);
+		if (node == null)
+			return entryData.getDefaultValue();
+
+		return entryData.getValue(node);
+	}
+
+	public Object getNonNullParsed(String key) {
+		Object parsed = getParsed(key);
+		if (parsed == null)
+			throw new RuntimeException("Null value for asserted non-null value");
+		return parsed;
 	}
 
 }

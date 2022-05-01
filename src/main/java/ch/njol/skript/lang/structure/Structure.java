@@ -42,8 +42,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -87,15 +89,15 @@ public abstract class Structure implements SyntaxElement, Debuggable {
 			List<Node> unhandledNodes = new ArrayList<>();
 			for (Node node : structureData.sectionNode) // All nodes are unhandled
 				unhandledNodes.add(node);
-			return init(literals, matchedPattern, parseResult, new EntryContainer(structureData.sectionNode, null, unhandledNodes));
+			return init(literals, matchedPattern, parseResult, new EntryContainer(structureData.sectionNode, null, null, unhandledNodes));
 		}
 
 		StructureEntryValidator entryValidator = structureInfo.entryValidator;
 		assert entryValidator != null;
-		NonNullPair<Boolean, List<Node>> validated = entryValidator.validate(structureData.sectionNode);
-		if (!validated.getFirst())
+		NonNullPair<Map<String, Node>, List<Node>> validated = entryValidator.validate(structureData.sectionNode);
+		if (validated == null)
 			return false;
-		return init(literals, matchedPattern, parseResult, new EntryContainer(structureData.sectionNode, entryValidator, validated.getSecond()));
+		return init(literals, matchedPattern, parseResult, new EntryContainer(structureData.sectionNode, entryValidator, validated.getFirst(), validated.getSecond()));
 	}
 
 	public abstract boolean init(Literal<?>[] args,
