@@ -18,8 +18,6 @@
  */
 package ch.njol.skript;
 
-import ch.njol.skript.bukkitutil.CommandReloader;
-import ch.njol.skript.command.Commands;
 import ch.njol.skript.config.Config;
 import ch.njol.skript.config.Node;
 import ch.njol.skript.config.SectionNode;
@@ -28,11 +26,11 @@ import ch.njol.skript.events.bukkit.PreScriptLoadEvent;
 import ch.njol.skript.lang.Section;
 import ch.njol.skript.lang.SkriptParser;
 import ch.njol.skript.lang.Statement;
-import ch.njol.skript.lang.structure.Structure;
 import ch.njol.skript.lang.TriggerItem;
 import ch.njol.skript.lang.TriggerSection;
 import ch.njol.skript.lang.function.Functions;
 import ch.njol.skript.lang.parser.ParserInstance;
+import ch.njol.skript.lang.structure.Structure;
 import ch.njol.skript.localization.Message;
 import ch.njol.skript.localization.PluralizingArgsMessage;
 import ch.njol.skript.log.CountingLogHandler;
@@ -64,17 +62,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
@@ -94,8 +89,6 @@ public class ScriptLoader {
 	 */
 	static void disableScripts() {
 		SkriptEventHandler.removeAllTriggers();
-		// TODO STRUCTURE commands & functions internalized
-		Commands.clearCommands();
 	}
 	
 	/**
@@ -109,25 +102,16 @@ public class ScriptLoader {
 	 * </ul>
 	 */
 	public static class ScriptInfo {
-		public int files, triggers, commands, functions;
-		
-		/**
-		 * Command names. They're collected to see if commands need to be
-		 * sent to clients on Minecraft 1.13 and newer. Note that add/subtract
-		 * don't operate with command names!
-		 */
-		public final Set<String> commandNames;
-		
+		public int files, triggers, functions;
+
 		public ScriptInfo() {
-			commandNames = new HashSet<>();
+
 		}
 		
-		public ScriptInfo(int numFiles, int numTriggers, int numCommands, int numFunctions) {
+		public ScriptInfo(int numFiles, int numTriggers, int numFunctions) {
 			files = numFiles;
 			triggers = numTriggers;
-			commands = numCommands;
 			functions = numFunctions;
-			commandNames = new HashSet<>();
 		}
 		
 		/**
@@ -137,28 +121,24 @@ public class ScriptLoader {
 		public ScriptInfo(ScriptInfo other) {
 			files = other.files;
 			triggers = other.triggers;
-			commands = other.commands;
 			functions = other.functions;
-			commandNames = new HashSet<>(other.commandNames);
 		}
 		
 		public void add(ScriptInfo other) {
 			files += other.files;
 			triggers += other.triggers;
-			commands += other.commands;
 			functions += other.functions;
 		}
 		
 		public void subtract(ScriptInfo other) {
 			files -= other.files;
 			triggers -= other.triggers;
-			commands -= other.commands;
 			functions -= other.functions;
 		}
 		
 		@Override
 		public String toString() {
-			return "ScriptInfo{files=" + files + ",triggers=" + triggers + ",commands=" + commands + ",functions:" + functions + "}";
+			return "ScriptInfo{files=" + files + ",triggers=" + triggers + ",functions:" + functions + "}";
 		}
 	}
 
@@ -166,13 +146,6 @@ public class ScriptLoader {
 	 * Must be synchronized
 	 */
 	private static final ScriptInfo loadedScripts = new ScriptInfo();
-	
-	/**
-	 * Command names by script names. Used to figure out when commands need
-	 * to be re-sent to clients on MC 1.13+.
-	 */
-	// TODO commands internalized
-	private static final Map<String, Set<String>> commandNames = new HashMap<>();
 	
 	/**
 	 * @see ParserInstance#get()
@@ -477,7 +450,6 @@ public class ScriptLoader {
 					Skript.info(m_scripts_loaded.toString(
 						scriptInfo.files,
 						scriptInfo.triggers,
-						scriptInfo.commands,
 						start.difference(new Date())
 					));
 			});
@@ -492,9 +464,6 @@ public class ScriptLoader {
 	 * @return Info on the loaded scripts.
 	 */
 	public static CompletableFuture<ScriptInfo> loadScripts(List<Config> configs, OpenCloseable openCloseable) {
-		// TODO STRUCTURE commands internalized
-		AtomicBoolean syncCommands = new AtomicBoolean();
-
 		Bukkit.getPluginManager().callEvent(new PreScriptLoadEvent(configs));
 		
 		ScriptInfo scriptInfo = new ScriptInfo();
@@ -510,13 +479,6 @@ public class ScriptLoader {
 				ScriptInfo info = loadScript(config);
 
 				structures.addAll(getParser().getLoadedStructures());
-				
-				// Check if commands have been changed and a re-send is needed
-				// TODO STRUCTURE commands internalized
-				if (!info.commandNames.equals(commandNames.get(config.getFileName()))) {
-					syncCommands.set(true); // Sync once after everything has been loaded
-					commandNames.put(config.getFileName(), info.commandNames); // These will soon be sent to clients
-				}
 				
 				scriptInfo.add(info);
 				return null;
@@ -543,17 +505,6 @@ public class ScriptLoader {
 
 					// TODO STRUCTURE functions internalized
 					Functions.validateFunctions();
-
-					// After we've loaded everything, refresh commands their names changed
-					// TODO STRUCTURE commands internalized
-					if (syncCommands.get()) {
-						if (CommandReloader.syncCommands(Bukkit.getServer()))
-							Skript.debug("Commands synced to clients");
-						else
-							Skript.debug("Commands changed but not synced to clients (normal on 1.12 and older)");
-					} else {
-						Skript.debug("Commands unchanged, not syncing them to clients");
-					}
 
 					// TODO STRUCTURE events internalized
 					SkriptEventHandler.registerBukkitEvents();
@@ -628,7 +579,7 @@ public class ScriptLoader {
 				}
 				
 				if (Skript.logHigh())
-					Skript.info("loaded " + scriptInfo.triggers + " trigger" + (scriptInfo.triggers == 1 ? "" : "s")+ " and " + scriptInfo.commands + " command" + (scriptInfo.commands == 1 ? "" : "s") + " from '" + config.getFileName() + "'");
+					Skript.info("loaded " + scriptInfo.triggers + " trigger" + (scriptInfo.triggers == 1 ? "" : "s") + " from '" + config.getFileName() + "'");
 				
 				getParser().setCurrentScript(null);
 			}
@@ -950,12 +901,6 @@ public class ScriptLoader {
 	public static int loadedScripts() {
 		synchronized (loadedScripts) {
 			return loadedScripts.files;
-		}
-	}
-	
-	public static int loadedCommands() {
-		synchronized (loadedScripts) {
-			return loadedScripts.commands;
 		}
 	}
 	

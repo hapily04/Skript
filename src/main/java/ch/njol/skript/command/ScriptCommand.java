@@ -99,7 +99,7 @@ public class ScriptCommand implements TabExecutor {
 	private final Expression<String> cooldownStorage;
 	final String usage;
 
-	final Trigger trigger;
+	public final Trigger trigger;
 
 	private final String pattern;
 	private final List<Argument<?>> arguments;
@@ -125,7 +125,7 @@ public class ScriptCommand implements TabExecutor {
 	 * @param items trigger to execute
 	 */
 	public ScriptCommand(final File script, final String name, final String pattern, final List<Argument<?>> arguments,
-						 final String description, final String usage, final ArrayList<String> aliases,
+						 final String description, final String usage, final List<String> aliases,
 						 final String permission, @Nullable final VariableString permissionMessage, @Nullable final Timespan cooldown,
 						 @Nullable final VariableString cooldownMessage, final String cooldownBypass,
 						 @Nullable VariableString cooldownStorage, final int executableBy, final List<TriggerItem> items) {
