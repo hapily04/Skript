@@ -56,7 +56,7 @@ public class StructAliases extends Structure {
 	}
 
 	@Override
-	public void preload() {
+	public void preLoad() {
 		registerAliases();
 	}
 
@@ -66,7 +66,7 @@ public class StructAliases extends Structure {
 	}
 
 	@Override
-	public void afterLoad() {
+	public void postLoad() {
 		registerAliases();
 	}
 

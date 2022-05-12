@@ -124,7 +124,7 @@ public abstract class SkriptEvent extends Structure {
 	}
 
 	@Override
-	public void afterLoad() {
+	public void postLoad() {
 		if (items == null) // shouldLoadEvent returned false
 			return;
 

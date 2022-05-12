@@ -54,7 +54,7 @@ public class StructFunction extends Structure {
 	}
 
 	@Override
-	public void preload() {
+	public void preLoad() {
 		if (getParser().getCurrentScript() == null)
 			throw new IllegalStateException("Current script is null during function loading");
 		signature = Functions.loadSignature(getParser().getCurrentScript().getFileName(), node);
@@ -72,7 +72,7 @@ public class StructFunction extends Structure {
 	}
 
 	@Override
-	public void afterLoad() {
+	public void postLoad() {
 		if (validateFunctions.get()) {
 			validateFunctions.set(false);
 			Functions.validateFunctions();

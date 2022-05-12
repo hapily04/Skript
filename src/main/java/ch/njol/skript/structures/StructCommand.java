@@ -297,7 +297,7 @@ public class StructCommand extends Structure {
 	}
 
 	@Override
-	public void afterLoad() {
+	public void postLoad() {
 		// TODO consider a message about number of scripts loaded for debug (it was removed when commands were internalized)
 		if (syncCommands.get()) {
 			syncCommands.set(false);

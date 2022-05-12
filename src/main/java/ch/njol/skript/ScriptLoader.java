@@ -501,7 +501,7 @@ public class ScriptLoader {
 							Config config = pair.getFirst();
 							if (getParser().getCurrentScript() != config)
 								getParser().setCurrentScript(config);
-							pair.getSecond().preload();
+							pair.getSecond().preLoad();
 						});
 
 					for (Entry<Config, List<Structure>> entry : structures.entrySet()) {
@@ -513,7 +513,7 @@ public class ScriptLoader {
 					for (Entry<Config, List<Structure>> entry : structures.entrySet()) {
 						getParser().setCurrentScript(entry.getKey());
 						for (Structure structure : entry.getValue())
-							structure.afterLoad();
+							structure.postLoad();
 					}
 
 					return scriptInfo;

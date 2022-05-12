@@ -102,13 +102,13 @@ public abstract class Structure implements SyntaxElement, Debuggable {
 								 ParseResult parseResult,
 								 EntryContainer entryContainer);
 
-	public void preload() {
+	public void preLoad() {
 
 	}
 
 	public abstract void load();
 
-	public void afterLoad() {
+	public void postLoad() {
 
 	}
 
@@ -135,7 +135,7 @@ public abstract class Structure implements SyntaxElement, Debuggable {
 
 	@Nullable
 	public static Structure parse(String expr, SectionNode sectionNode, @Nullable String defaultError) {
-		Structure.setNode(sectionNode);
+		ParserInstance.get().getData(StructureData.class).sectionNode = sectionNode;
 
 		Iterator<StructureInfo<? extends Structure>> iterator =
 			new ConsumingIterator<>(Skript.getStructures().iterator(),
@@ -153,11 +153,6 @@ public abstract class Structure implements SyntaxElement, Debuggable {
 		} finally {
 			parseLogHandler.stop();
 		}
-	}
-
-	static void setNode(SectionNode sectionNode) {
-		StructureData structureData = ParserInstance.get().getData(StructureData.class);
-		structureData.sectionNode = sectionNode;
 	}
 
 	static {

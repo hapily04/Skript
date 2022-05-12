@@ -67,7 +67,7 @@ public class StructOptions extends Structure {
 	}
 
 	@Override
-	public void preload() {
+	public void preLoad() {
 		registerOptions();
 	}
 
@@ -77,7 +77,7 @@ public class StructOptions extends Structure {
 	}
 
 	@Override
-	public void afterLoad() {
+	public void postLoad() {
 		registerOptions();
 	}
 
