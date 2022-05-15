@@ -21,14 +21,13 @@ package ch.njol.skript.structures;
 import ch.njol.skript.Skript;
 import ch.njol.skript.aliases.Aliases;
 import ch.njol.skript.aliases.ScriptAliases;
-import ch.njol.skript.config.Config;
 import ch.njol.skript.config.SectionNode;
 import ch.njol.skript.lang.Literal;
 import ch.njol.skript.lang.Script;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
+import ch.njol.skript.lang.parser.ParserInstance;
 import ch.njol.skript.lang.structure.EntryContainer;
 import ch.njol.skript.lang.structure.Structure;
-import ch.njol.skript.lang.parser.ParserInstance;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.Nullable;
 
