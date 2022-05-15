@@ -25,6 +25,7 @@ import ch.njol.skript.SkriptAddon;
 import ch.njol.skript.classes.ClassInfo;
 import ch.njol.skript.config.SectionNode;
 import ch.njol.skript.lang.ParseContext;
+import ch.njol.skript.lang.Script;
 import ch.njol.skript.lang.SkriptParser;
 import ch.njol.skript.log.SkriptLogger;
 import ch.njol.skript.registrations.Classes;
@@ -110,7 +111,7 @@ public abstract class Functions {
 	 * @return Script function, or null if something went wrong.
 	 */
 	@Nullable
-	public static Function<?> loadFunction(SectionNode node) {
+	public static Function<?> loadFunction(Script script, SectionNode node) {
 		SkriptLogger.setNode(node);
 		String key = node.getKey();
 		String definition = ScriptLoader.replaceOptions(key == null ? "" : key);
@@ -134,7 +135,7 @@ public abstract class Functions {
 			Skript.debug("function " + name + "(" + StringUtils.join(params, ", ") + ")"
 				+ (c != null ? " :: " + (sign.isSingle() ? c.getName().getSingular() : c.getName().getPlural()) : "") + ":");
 
-		Function<?> f = new ScriptFunction<>(sign, node);
+		Function<?> f = new ScriptFunction<>(sign, script, node);
 
 		// Register the function for signature
 		namespace.addFunction(f);

@@ -20,7 +20,6 @@ package ch.njol.skript.lang;
 
 import ch.njol.skript.ScriptLoader;
 import ch.njol.skript.Skript;
-import ch.njol.skript.config.Config;
 import ch.njol.skript.config.SectionNode;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.skript.lang.parser.ParserInstance;
@@ -129,8 +128,7 @@ public abstract class Section extends TriggerSection implements SyntaxElement {
 		parser.setCurrentSections(previousSections);
 		parser.setHasDelayBefore(previousDelay);
 
-		Config script = parser.getCurrentScript();
-		return new Trigger(script != null ? script.getFile() : null, name, skriptEvent, triggerItems);
+		return new Trigger(parser.getCurrentScript(), name, skriptEvent, triggerItems);
 	}
 
 	/**

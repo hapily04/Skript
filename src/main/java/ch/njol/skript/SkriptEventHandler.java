@@ -19,7 +19,7 @@
 package ch.njol.skript;
 
 import ch.njol.skript.ScriptLoader.ScriptInfo;
-import ch.njol.skript.config.Config;
+import ch.njol.skript.lang.Script;
 import ch.njol.skript.lang.SelfRegisteringSkriptEvent;
 import ch.njol.skript.lang.Trigger;
 import ch.njol.skript.lang.parser.ParserInstance;
@@ -41,7 +41,6 @@ import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.plugin.EventExecutor;
 import org.eclipse.jdt.annotation.Nullable;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -92,7 +91,7 @@ public abstract class SkriptEventHandler {
 	private static final List<NonNullPair<Class<? extends Event>, Trigger>> triggers = new ArrayList<>();
 	
 	private static final List<Trigger> selfRegisteredTriggers = new ArrayList<>();
-	private static final HashMap<File, List<Structure>> structures = new HashMap<>();
+	private static final HashMap<Script, List<Structure>> structures = new HashMap<>();
 	
 	private static Iterator<Trigger> getTriggers(Class<? extends Event> event) {
 		return new ArrayList<>(triggers).stream()
@@ -189,7 +188,7 @@ public abstract class SkriptEventHandler {
 		selfRegisteredTriggers.add(t);
 	}
 
-	private static List<Structure> getStructures(File script) {
+	private static List<Structure> getStructures(Script script) {
 		return structures.computeIfAbsent(script, file -> new ArrayList<>());
 	}
 
@@ -200,14 +199,13 @@ public abstract class SkriptEventHandler {
 	 * @throws IllegalStateException when {@link ParserInstance#getCurrentScript()} is null
 	 */
 	public static void addStructure(Structure structure) throws IllegalStateException {
-		Config config = ParserInstance.get().getCurrentScript();
-		if (config == null || config.getFile() == null)
+		Script script = ParserInstance.get().getCurrentScript();
+		if (script == null)
 			throw new IllegalStateException("Current script is null");
-		File script = config.getFile();
 		getStructures(script).add(structure);
 	}
 	
-	static ScriptInfo removeTriggers(File script) {
+	static ScriptInfo removeTriggers(Script script) {
 		ScriptInfo info = new ScriptInfo();
 		info.files = 1;
 		

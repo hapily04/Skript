@@ -21,6 +21,7 @@ package ch.njol.skript.structures;
 import ch.njol.skript.Skript;
 import ch.njol.skript.config.SectionNode;
 import ch.njol.skript.lang.Literal;
+import ch.njol.skript.lang.Script;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.skript.lang.structure.EntryContainer;
 import ch.njol.skript.lang.structure.Structure;
@@ -55,16 +56,17 @@ public class StructFunction extends Structure {
 
 	@Override
 	public void preLoad() {
-		if (getParser().getCurrentScript() == null)
+		Script script = getParser().getCurrentScript();
+		if (script == null)
 			throw new IllegalStateException("Current script is null during function loading");
-		signature = Functions.loadSignature(getParser().getCurrentScript().getFileName(), node);
+		signature = Functions.loadSignature(script.getConfig().getFileName(), node);
 	}
 
 	@Override
 	public void load() {
 		getParser().setCurrentEvent("function", FunctionEvent.class);
 
-		Functions.loadFunction(node);
+		Functions.loadFunction(getParser().getCurrentScript(), node);
 
 		getParser().deleteCurrentEvent();
 

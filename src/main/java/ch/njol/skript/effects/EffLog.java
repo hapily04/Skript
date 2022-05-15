@@ -26,6 +26,7 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.logging.Level;
 
+import ch.njol.skript.lang.Script;
 import org.bukkit.event.Event;
 import org.eclipse.jdt.annotation.Nullable;
 
@@ -113,9 +114,17 @@ public class EffLog extends Effect {
 					w.flush();
 				}
 			} else {
-				final Trigger t = getTrigger();
-				final File script = t == null ? null : t.getScript();
-				Skript.info("[" + (script != null ? script.getName() : "---") + "] " + message);
+				Trigger t = getTrigger();
+				String scriptName = "---";
+				if (t != null) {
+					Script script = t.getScript();
+					if (script != null) {
+						File scriptFile = script.getConfig().getFile();
+						if (scriptFile != null)
+							scriptName = scriptFile.getName();
+					}
+				}
+				Skript.info("[" + scriptName + "] " + message);
 			}
 		}
 	}

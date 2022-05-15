@@ -23,6 +23,7 @@ import ch.njol.skript.config.Node;
 import ch.njol.skript.config.SectionNode;
 import ch.njol.skript.config.SimpleNode;
 import ch.njol.skript.events.bukkit.PreScriptLoadEvent;
+import ch.njol.skript.lang.Script;
 import ch.njol.skript.lang.Section;
 import ch.njol.skript.lang.SkriptParser;
 import ch.njol.skript.lang.Statement;
@@ -142,7 +143,7 @@ public class ScriptLoader {
 	/**
 	 * Must be synchronized
 	 */
-	private static final ScriptInfo loadedScripts = new ScriptInfo();
+	private static final ScriptInfo loadedScriptInfo = new ScriptInfo();
 	
 	/**
 	 * @see ParserInstance#get()
@@ -151,49 +152,63 @@ public class ScriptLoader {
 		return ParserInstance.get();
 	}
 	
-	
 	/*
 	 * Enabled/disabled script tracking
 	 */
+
 	/**
-	 * All loaded script files.
+	 * All loaded scripts.
 	 */
 	@SuppressWarnings("null")
-	private static final Set<File> loadedFiles = Collections.synchronizedSet(new HashSet<>());
+	private static final Set<Script> loadedScripts = Collections.synchronizedSet(new HashSet<>());
 	
 	/**
-	 * Filter for enabled scripts & folders.
+	 * Filter for loaded scripts and folders.
 	 */
-	private static final FileFilter scriptFilter =
+	private static final FileFilter loadedScriptFilter =
 		f -> f != null
 			&& (f.isDirectory() && !f.getName().startsWith(".") || !f.isDirectory() && StringUtils.endsWithIgnoreCase(f.getName(), ".sk"))
 			&& !f.getName().startsWith("-") && !f.isHidden();
 
 	/**
-	 * All disabled script files.
+	 * Searches through the loaded scripts to find the script loaded from the provided file.
+	 * @param file The file containing the script to find.
+	 * @return The script loaded from the provided file, or null if no script was found.
 	 */
-	private static final Set<File> disabledFiles = Collections.synchronizedSet(new HashSet<>());
+	@Nullable
+	public static Script getScript(File file) {
+		for (Script script : loadedScripts) {
+			if (file.equals(script.getConfig().getFile()))
+				return script;
+		}
+		return null;
+	}
 
 	/**
-	 * Filter for disabled scripts & folders.
+	 * All disabled script files.
 	 */
-	private static final FileFilter disabledFilter =
+	private static final Set<File> disabledScripts = Collections.synchronizedSet(new HashSet<>());
+
+	/**
+	 * Filter for disabled scripts and folders.
+	 */
+	private static final FileFilter disabledScriptFilter =
 		f -> f != null
 			&& (f.isDirectory() && !f.getName().startsWith(".") || !f.isDirectory() && StringUtils.endsWithIgnoreCase(f.getName(), ".sk"))
 			&& f.getName().startsWith("-") && !f.isHidden();
 	
 	/**
-	 * Reevaluates {@link #disabledFiles}.
+	 * Reevaluates {@link #disabledScripts}.
 	 * @param path the scripts folder to use for the reevaluation.
 	 */
 	private static void updateDisabledScripts(Path path) {
-		disabledFiles.clear();
+		disabledScripts.clear();
 		try {
 			// TODO handle AccessDeniedException
 			Files.walk(path)
 				.map(Path::toFile)
-				.filter(disabledFilter::accept)
-				.forEach(disabledFiles::add);
+				.filter(disabledScriptFilter::accept)
+				.forEach(disabledScripts::add);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -407,7 +422,7 @@ public class ScriptLoader {
 		
 		updateDisabledScripts(scriptsFolder.toPath());
 		
-		Set<File> oldLoadedFiles = new HashSet<>(loadedFiles);
+		Set<Script> oldLoadedScripts = new HashSet<>(loadedScripts);
 		
 		List<Config> configs;
 		
@@ -427,14 +442,15 @@ public class ScriptLoader {
 				// Now, make sure that old files that are no longer there are unloaded
 				// Only if this is done using async loading, though!
 				if (isAsync()) {
-					oldLoadedFiles.removeAll(loadedFiles);
-					for (File script : oldLoadedFiles) {
+					oldLoadedScripts.removeAll(loadedScripts);
+					for (Script script : oldLoadedScripts) {
 						if (script == null)
 							throw new NullPointerException();
 
 						unloadScript(script);
+						//noinspection ConstantConditions - getPath should never return null
 						String name = Skript.getInstance().getDataFolder().toPath().toAbsolutePath()
-							.resolve(Skript.SCRIPTSFOLDER).relativize(script.toPath()).toString();
+							.resolve(Skript.SCRIPTSFOLDER).relativize(script.getConfig().getPath()).toString();
 						assert name != null;
 					}
 				}
@@ -463,7 +479,7 @@ public class ScriptLoader {
 		
 		ScriptInfo scriptInfo = new ScriptInfo();
 
-		Map<Config, List<Structure>> structures = new HashMap<>();
+		Map<Script, List<Structure>> structures = new HashMap<>();
 
 		List<CompletableFuture<Void>> scriptInfoFutures = new ArrayList<>();
 		for (Config config : configs) {
@@ -471,9 +487,10 @@ public class ScriptLoader {
 				throw new NullPointerException();
 			
 			CompletableFuture<Void> future = makeFuture(() -> {
-				ScriptInfo info = loadScript(config);
+				Script script = new Script(config);
+				ScriptInfo info = loadScript(script);
 
-				structures.put(config, getParser().getLoadedStructures().stream()
+				structures.put(script, getParser().getLoadedStructures().stream()
 					.sorted(Comparator.comparing(Structure::getPriority))
 					.collect(Collectors.toList())
 				);
@@ -492,25 +509,25 @@ public class ScriptLoader {
 
 					structures.entrySet().stream()
 						.flatMap(entry -> { // Flatten each entry down to a stream of Config-Structure pairs
-							Config config = entry.getKey();
+							Script script = entry.getKey();
 							return entry.getValue().stream()
-								.map(structure -> new NonNullPair<>(config, structure));
+								.map(structure -> new NonNullPair<>(script, structure));
 						})
 						.sorted(Comparator.comparing(pair -> pair.getSecond().getPriority()))
 						.forEach(pair -> {
-							Config config = pair.getFirst();
-							if (getParser().getCurrentScript() != config)
-								getParser().setCurrentScript(config);
+							Script script = pair.getFirst();
+							if (getParser().getCurrentScript() != script)
+								getParser().setCurrentScript(script);
 							pair.getSecond().preLoad();
 						});
 
-					for (Entry<Config, List<Structure>> entry : structures.entrySet()) {
+					for (Entry<Script, List<Structure>> entry : structures.entrySet()) {
 						getParser().setCurrentScript(entry.getKey());
 						for (Structure structure : entry.getValue())
 							structure.load();
 					}
 
-					for (Entry<Config, List<Structure>> entry : structures.entrySet()) {
+					for (Entry<Script, List<Structure>> entry : structures.entrySet()) {
 						getParser().setCurrentScript(entry.getKey());
 						for (Structure structure : entry.getValue())
 							structure.postLoad();
@@ -529,12 +546,12 @@ public class ScriptLoader {
 
 	/**
 	 * Loads one script. Only for internal use, as this doesn't register/update event handlers.
-	 * @param config Config for script to be loaded.
-	 * @return Info about script that is loaded
+	 * @param script The script to be loaded.
+	 * @return Statistics for the script loaded.
 	 */
 	// Whenever you call this method, make sure to also call PreScriptLoadEvent
-	private static ScriptInfo loadScript(@Nullable Config config) {
-		if (config == null) { // Something bad happened, hopefully got logged to console
+	private static ScriptInfo loadScript(@Nullable Script script) {
+		if (script == null) { // Something bad happened, hopefully got logged to console
 			return new ScriptInfo();
 		}
 
@@ -546,11 +563,13 @@ public class ScriptLoader {
 		List<Structure> structures = getParser().getLoadedStructures();
 		structures.clear();
 
+		Config config = script.getConfig();
+
 		try {
 			if (SkriptConfig.keepConfigsLoaded.value())
 				SkriptConfig.configs.add(config);
 
-			getParser().setCurrentScript(config);
+			getParser().setCurrentScript(script);
 			
 			try (CountingLogHandler ignored = new CountingLogHandler(SkriptLogger.SEVERE).start()) {
 				for (Node cnode : config.getMainNode()) {
@@ -602,15 +621,15 @@ public class ScriptLoader {
 			File file = config.getFile();
 			if (isAsync()) {
 				if (file != null)
-					unloadScript(file);
+					unloadScript(script);
 			}
 			
 			// Remove the script from the disabled scripts list
 			File disabledFile = new File(file.getParentFile(), "-" + file.getName());
-			disabledFiles.remove(disabledFile);
+			disabledScripts.remove(disabledFile);
 			
 			// Add to loaded files to use for future reloads
-			loadedFiles.add(file);
+			loadedScripts.add(script);
 			
 			return null;
 		};
@@ -665,7 +684,7 @@ public class ScriptLoader {
 			return config != null ? Collections.singletonList(config) : Collections.emptyList();
 		}
 		
-		File[] files = directory.listFiles(scriptFilter);
+		File[] files = directory.listFiles(loadedScriptFilter);
 		Arrays.sort(files);
 		
 		List<Config> loadedFiles = new ArrayList<>(files.length);
@@ -687,11 +706,13 @@ public class ScriptLoader {
 	 * @param file The script to load the structure of.
 	 * @return The loaded structure or null if an error occurred.
 	 */
-	@SuppressWarnings("resource") // Stream is closed in Config constructor called in loadStructure
 	@Nullable
+	@SuppressWarnings("resource") // Stream is closed in Config constructor called in loadStructure
 	public static Config loadStructure(File file) {
 		if (!file.exists()) { // If file does not exist...
-			unloadScript(file); // ... it might be good idea to unload it now
+			Script script = getScript(file);
+			if (script != null)
+				unloadScript(script); // ... it might be good idea to unload it now
 			return null;
 		}
 		
@@ -744,41 +765,59 @@ public class ScriptLoader {
 	 */
 	private static ScriptInfo unloadScripts_(File folder) {
 		ScriptInfo info = new ScriptInfo();
-		for (File file : folder.listFiles(scriptFilter)) {
+		for (File file : folder.listFiles(loadedScriptFilter)) {
 			if (file.isDirectory()) {
 				info.add(unloadScripts_(file));
 			} else {
-				info.add(unloadScript(file));
+				Script script = getScript(file);
+				if (script != null)
+					info.add(unloadScript(script));
 			}
 		}
 		return info;
 	}
+
+	/**
+	 * Unloads the provided script.
+	 * @param scriptFile The file representing the script to unload.
+	 * @return Statistics for the unloaded script.
+	 */
+	public static ScriptInfo unloadScript(File scriptFile) {
+		Script script = getScript(scriptFile);
+		if (script != null)
+			return unloadScript(script);
+		return new ScriptInfo();
+	}
 	
 	/**
 	 * Unloads the provided script.
-	 * @param script The file representing the script to unload.
+	 * @param script The script to unload.
 	 * @return Statistics for the unloaded script.
 	 */
-	public static ScriptInfo unloadScript(File script) {
-		if (loadedFiles.contains(script)) {
-			ScriptInfo info = SkriptEventHandler.removeTriggers(script); // Remove triggers
-			synchronized (loadedScripts) { // Update global script info
-				loadedScripts.subtract(info);
-			}
-
-			loadedFiles.remove(script); // We just unloaded it, so...
-			disabledFiles.add(new File(script.getParentFile(), "-" + script.getName()));
-
-			// If unloading, our caller will do this immediately after we return
-			// However, if reloading, new version of this script is first loaded
-			String name = Skript.getInstance().getDataFolder().toPath().toAbsolutePath()
-				.resolve(Skript.SCRIPTSFOLDER).relativize(script.toPath().toAbsolutePath()).toString();
-			assert name != null;
-
-			return info; // Return how much we unloaded
+	public static ScriptInfo unloadScript(Script script) {
+		if (!loadedScripts.contains(script)) {
+			return new ScriptInfo(); // Return that we unloaded literally nothing
 		}
 
-		return new ScriptInfo(); // Return that we unloaded literally nothing
+		ScriptInfo info = SkriptEventHandler.removeTriggers(script); // Remove triggers
+		synchronized (loadedScriptInfo) { // Update global script info
+			loadedScriptInfo.subtract(info);
+		}
+
+		loadedScripts.remove(script); // We just unloaded it, so...
+		File scriptFile = script.getConfig().getFile();
+		assert scriptFile != null;
+		disabledScripts.add(new File(scriptFile.getParentFile(), "-" + scriptFile.getName()));
+
+		// If unloading, our caller will do this immediately after we return
+		// However, if reloading, new version of this script is first loaded
+
+		//noinspection ConstantConditions - getPath should never return null
+		String name = Skript.getInstance().getDataFolder().toPath().toAbsolutePath()
+			.resolve(Skript.SCRIPTSFOLDER).relativize(script.getConfig().getPath()).toAbsolutePath().toString();
+		assert name != null;
+
+		return info; // Return how much we unloaded
 	}
 	
 	/*
@@ -787,14 +826,27 @@ public class ScriptLoader {
 
 	/**
 	 * Reloads a single script.
-	 * @param script Script file.
+	 * @param scriptFile The file representing the script to reload.
 	 * @return Future of statistics of the newly loaded script.
 	 */
-	public static CompletableFuture<ScriptInfo> reloadScript(File script, OpenCloseable openCloseable) {
+	public static CompletableFuture<ScriptInfo> reloadScript(File scriptFile, OpenCloseable openCloseable) {
+		Script script = getScript(scriptFile);
+		if (script == null)
+			return CompletableFuture.completedFuture(new ScriptInfo());
+		return reloadScript(script, openCloseable);
+	}
+
+	/**
+	 * Reloads a single script.
+	 * @param script The script to reload.
+	 * @return Future of statistics of the newly loaded script.
+	 */
+	public static CompletableFuture<ScriptInfo> reloadScript(Script script, OpenCloseable openCloseable) {
 		if (!isAsync()) {
 			unloadScript(script);
 		}
-		Config config = loadStructure(script);
+		//noinspection ConstantConditions - getFile should never return null
+		Config config = loadStructure(script.getConfig().getFile());
 		if (config == null)
 			return CompletableFuture.completedFuture(new ScriptInfo());
 		return loadScripts(Collections.singletonList(config), openCloseable);
@@ -812,7 +864,6 @@ public class ScriptLoader {
 		List<Config> configs = loadStructures(folder);
 		return loadScripts(configs, openCloseable);
 	}
-
 	
 	/*
 	 * Code loading methods
@@ -894,27 +945,27 @@ public class ScriptLoader {
 	 * Loaded script statistics
 	 */
 
-	public static Collection<File> getLoadedFiles() {
-		return Collections.unmodifiableCollection(loadedFiles);
+	public static Collection<Script> getLoadedScripts() {
+		return Collections.unmodifiableCollection(loadedScripts);
 	}
 
-	public static Collection<File> getDisabledFiles() {
-		return Collections.unmodifiableCollection(disabledFiles);
+	public static Collection<File> getDisabledScripts() {
+		return Collections.unmodifiableCollection(disabledScripts);
 	}
 	
 	public static int loadedScripts() {
-		synchronized (loadedScripts) {
-			return loadedScripts.files;
+		synchronized (loadedScriptInfo) {
+			return loadedScriptInfo.files;
 		}
 	}
 	
 	public static int loadedTriggers() {
-		synchronized (loadedScripts) {
-			return loadedScripts.triggers;
+		synchronized (loadedScriptInfo) {
+			return loadedScriptInfo.triggers;
 		}
 	}
-	
-	
+
+
 	/*
 	 * Deprecated stuff
 	 *
@@ -924,6 +975,7 @@ public class ScriptLoader {
 	 * Some methods have been replaced by ParserInstance, some
 	 * by new methods in this class.
 	 */
+
 	/**
 	 * @see #loadScripts(OpenCloseable)
 	 */
@@ -933,7 +985,7 @@ public class ScriptLoader {
 			disableScripts();
 		loadScripts(OpenCloseable.EMPTY).join();
 	}
-	
+
 	/**
 	 * @see #loadScripts(List, OpenCloseable)
 	 */
@@ -941,7 +993,7 @@ public class ScriptLoader {
 	public static ScriptInfo loadScripts(List<Config> configs) {
 		return loadScripts(configs, OpenCloseable.EMPTY).join();
 	}
-	
+
 	/**
 	 * @see #loadScripts(List, OpenCloseable)
 	 * @see RetainingLogHandler
@@ -955,7 +1007,7 @@ public class ScriptLoader {
 			logOut.addAll(logHandler.getLog());
 		}
 	}
-	
+
 	/**
 	 * @see #loadScripts(List, OpenCloseable)
 	 */
@@ -963,7 +1015,7 @@ public class ScriptLoader {
 	public static ScriptInfo loadScripts(Config... configs) {
 		return loadScripts(Arrays.asList(configs), OpenCloseable.EMPTY).join();
 	}
-	
+
 	/**
 	 * @see #reloadScript(File, OpenCloseable)
 	 */
@@ -971,7 +1023,7 @@ public class ScriptLoader {
 	public static ScriptInfo reloadScript(File script) {
 		return reloadScript(script, OpenCloseable.EMPTY).join();
 	}
-	
+
 	/**
 	 * @see #reloadScripts(File, OpenCloseable)
 	 */
@@ -979,7 +1031,7 @@ public class ScriptLoader {
 	public static ScriptInfo reloadScripts(File folder) {
 		return reloadScripts(folder, OpenCloseable.EMPTY).join();
 	}
-	
+
 	/**
 	 * @see ParserInstance#getHasDelayBefore()
 	 */
@@ -987,7 +1039,7 @@ public class ScriptLoader {
 	public static Kleenean getHasDelayBefore() {
 		return getParser().getHasDelayBefore();
 	}
-	
+
 	/**
 	 * @see ParserInstance#setHasDelayBefore(Kleenean)
 	 */
@@ -995,24 +1047,26 @@ public class ScriptLoader {
 	public static void setHasDelayBefore(Kleenean hasDelayBefore) {
 		getParser().setHasDelayBefore(hasDelayBefore);
 	}
-	
+
 	/**
 	 * @see ParserInstance#getCurrentScript()
 	 */
 	@Nullable
 	@Deprecated
 	public static Config getCurrentScript() {
-		return getParser().getCurrentScript();
+		Script script = getParser().getCurrentScript();
+		return script != null ? script.getConfig() : null;
 	}
-	
+
 	/**
-	 * @see ParserInstance#setCurrentScript(Config)
+	 * @see ParserInstance#setCurrentScript(Script)
 	 */
 	@Deprecated
 	public static void setCurrentScript(@Nullable Config currentScript) {
-		getParser().setCurrentScript(currentScript);
+		//noinspection ConstantConditions - getFile should never return null
+		getParser().setCurrentScript(currentScript != null ? getScript(currentScript.getFile()) : null);
 	}
-	
+
 	/**
 	 * @see ParserInstance#getCurrentSections()
 	 */
@@ -1020,7 +1074,7 @@ public class ScriptLoader {
 	public static List<TriggerSection> getCurrentSections() {
 		return getParser().getCurrentSections();
 	}
-	
+
 	/**
 	 * @see ParserInstance#setCurrentSections(List)
 	 */
@@ -1028,7 +1082,7 @@ public class ScriptLoader {
 	public static void setCurrentSections(List<TriggerSection> currentSections) {
 		getParser().setCurrentSections(currentSections);
 	}
-	
+
 	/**
 	 * @see ParserInstance#getCurrentSections(Class)
 	 */
@@ -1042,7 +1096,7 @@ public class ScriptLoader {
 	 */
 	@Deprecated
 	public static void setCurrentLoops(List<SecLoop> currentLoops) { }
-	
+
 	/**
 	 * @see ParserInstance#getCurrentEventName()
 	 */
@@ -1051,7 +1105,7 @@ public class ScriptLoader {
 	public static String getCurrentEventName() {
 		return getParser().getCurrentEventName();
 	}
-	
+
 	/**
 	 * @see ParserInstance#setCurrentEvent(String, Class[])
 	 */
@@ -1060,7 +1114,7 @@ public class ScriptLoader {
 	public static void setCurrentEvent(String name, @Nullable Class<? extends Event>... events) {
 		getParser().setCurrentEvent(name, events);
 	}
-	
+
 	/**
 	 * @see ParserInstance#deleteCurrentEvent()
 	 */
@@ -1068,7 +1122,7 @@ public class ScriptLoader {
 	public static void deleteCurrentEvent() {
 		getParser().deleteCurrentEvent();
 	}
-	
+
 	/**
 	 * @see ParserInstance#isCurrentEvent(Class)
 	 */
@@ -1076,7 +1130,7 @@ public class ScriptLoader {
 	public static boolean isCurrentEvent(@Nullable Class<? extends Event> event) {
 		return getParser().isCurrentEvent(event);
 	}
-	
+
 	/**
 	 * @see ParserInstance#isCurrentEvent(Class[])
 	 */
@@ -1085,7 +1139,7 @@ public class ScriptLoader {
 	public static boolean isCurrentEvent(Class<? extends Event>... events) {
 		return getParser().isCurrentEvent(events);
 	}
-	
+
 	/**
 	 * @see ParserInstance#getCurrentEvents()
 	 */
@@ -1102,5 +1156,5 @@ public class ScriptLoader {
 	public static Config loadStructure(Config config) {
 		return config;
 	}
-	
+
 }

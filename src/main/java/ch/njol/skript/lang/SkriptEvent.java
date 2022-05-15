@@ -131,7 +131,7 @@ public abstract class SkriptEvent extends Structure {
 		getParser().setCurrentEvent(skriptEventInfo.getName().toLowerCase(Locale.ENGLISH), getEventClasses());
 		getParser().setCurrentSkriptEvent(this);
 
-		File script = getParser().getCurrentScript() != null ? getParser().getCurrentScript().getFile() : null;
+		Script script = getParser().getCurrentScript();
 
 		Trigger trigger;
 		try {

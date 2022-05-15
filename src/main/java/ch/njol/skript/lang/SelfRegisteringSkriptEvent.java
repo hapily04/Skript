@@ -20,8 +20,6 @@ package ch.njol.skript.lang;
 
 import org.bukkit.event.Event;
 
-import ch.njol.skript.config.Config;
-
 import java.util.Objects;
 
 public abstract class SelfRegisteringSkriptEvent extends SkriptEvent {
@@ -61,9 +59,10 @@ public abstract class SelfRegisteringSkriptEvent extends SkriptEvent {
 	/**
 	 * This method is called when this event is parsed. Overriding this is
 	 * optional, and usually not needed.
-	 * @param config Script that is being parsed
+	 * @param script The script that is being parsed.
 	 */
-	public void afterParse(Config config) {
+	public void afterParse(Script script) {
+
 	}
 
 	@Override

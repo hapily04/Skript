@@ -22,6 +22,7 @@ import ch.njol.skript.ScriptLoader.ScriptInfo;
 import ch.njol.skript.config.Config;
 import ch.njol.skript.config.Node;
 import ch.njol.skript.lang.Expression;
+import ch.njol.skript.lang.Script;
 import ch.njol.skript.lang.SkriptEvent;
 import ch.njol.skript.lang.SkriptParser;
 import ch.njol.skript.lang.TriggerSection;
@@ -59,7 +60,7 @@ public class ParserInstance {
 	
 	// Script
 	@Nullable
-	private Config currentScript;
+	private Script currentScript;
 	private final HashMap<String, String> currentOptions = new HashMap<>();
 	private ScriptInfo scriptInfo;
 	private final List<Structure> loadedStructures = new ArrayList<>();
@@ -93,7 +94,7 @@ public class ParserInstance {
 	}
 	
 	@Nullable
-	public Config getCurrentScript() {
+	public Script getCurrentScript() {
 		return currentScript;
 	}
 	
@@ -212,13 +213,10 @@ public class ParserInstance {
 		this.node = node == null || node.getParent() == null ? null : node;
 	}
 	
-	public void setCurrentScript(@Nullable Config currentScript) {
-		Config previous = this.currentScript;
+	public void setCurrentScript(@Nullable Script currentScript) {
+		Script previous = this.currentScript;
 		this.currentScript = currentScript;
-		getDataInstances().forEach(data -> {
-			data.onCurrentScriptChange(previous, currentScript);
-			data.onCurrentScriptChange(currentScript);
-		});
+		getDataInstances().forEach(data -> data.onCurrentScriptChange(previous, currentScript));
 	}
 
 	public void setScriptInfo(ScriptInfo scriptInfo) {
@@ -288,7 +286,7 @@ public class ParserInstance {
 	 */
 	/**
 	 * An abstract class for addons that want to add data bound to a ParserInstance.
-	 * Extending classes may listen to the events {@link #onCurrentScriptChange(Config, Config)}
+	 * Extending classes may listen to the events {@link #onCurrentScriptChange(Script, Script)}
 	 * and {@link #onCurrentEventsChange(Class[])}.
 	 * It is recommended you make a constructor with a {@link ParserInstance} parameter that
 	 * sends that parser instance upwards in a super call, so you can use
@@ -306,10 +304,7 @@ public class ParserInstance {
 			return parserInstance;
 		}
 
-		@Deprecated
-		public void onCurrentScriptChange(@Nullable Config currentScript) { }
-
-		public void onCurrentScriptChange(@Nullable Config oldConfig, @Nullable Config newConfig) { }
+		public void onCurrentScriptChange(@Nullable Script oldScript, @Nullable Script newScript) { }
 
 		public void onCurrentEventsChange(@Nullable Class<? extends Event>[] currentEvents) { }
 		

@@ -24,6 +24,7 @@ import ch.njol.skript.aliases.ScriptAliases;
 import ch.njol.skript.config.Config;
 import ch.njol.skript.config.SectionNode;
 import ch.njol.skript.lang.Literal;
+import ch.njol.skript.lang.Script;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.skript.lang.structure.EntryContainer;
 import ch.njol.skript.lang.structure.Structure;
@@ -95,7 +96,7 @@ public class StructAliases extends Structure {
 		}
 
 		@Override
-		public void onCurrentScriptChange(@Nullable Config oldConfig, @Nullable Config newConfig) {
+		public void onCurrentScriptChange(@Nullable Script oldScript, @Nullable Script newScript) {
 			Aliases.setScriptAliases(null);
 		}
 	}

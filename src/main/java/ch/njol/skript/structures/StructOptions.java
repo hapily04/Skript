@@ -24,6 +24,7 @@ import ch.njol.skript.config.EntryNode;
 import ch.njol.skript.config.Node;
 import ch.njol.skript.config.SectionNode;
 import ch.njol.skript.lang.Literal;
+import ch.njol.skript.lang.Script;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.skript.lang.parser.ParserInstance;
 import ch.njol.skript.lang.structure.EntryContainer;
@@ -107,7 +108,7 @@ public class StructOptions extends Structure {
 		}
 
 		@Override
-		public void onCurrentScriptChange(@Nullable Config oldConfig, @Nullable Config newConfig) {
+		public void onCurrentScriptChange(@Nullable Script oldScript, @Nullable Script newScript) {
 			getParser().getCurrentOptions().clear();
 		}
 	}

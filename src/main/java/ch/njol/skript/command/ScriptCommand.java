@@ -32,6 +32,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 
+import ch.njol.skript.lang.Script;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
@@ -124,7 +125,7 @@ public class ScriptCommand implements TabExecutor {
 	 * @param permissionMessage message to display if the player doesn't have the given permission
 	 * @param items trigger to execute
 	 */
-	public ScriptCommand(final File script, final String name, final String pattern, final List<Argument<?>> arguments,
+	public ScriptCommand(final Script script, final String name, final String pattern, final List<Argument<?>> arguments,
 						 final String description, final String usage, final List<String> aliases,
 						 final String permission, @Nullable final VariableString permissionMessage, @Nullable final Timespan cooldown,
 						 @Nullable final VariableString cooldownMessage, final String cooldownBypass,
@@ -511,7 +512,7 @@ public class ScriptCommand implements TabExecutor {
 	}
 
 	@Nullable
-	public File getScript() {
+	public Script getScript() {
 		return trigger.getScript();
 	}
 

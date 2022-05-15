@@ -22,6 +22,7 @@ import ch.njol.skript.Skript;
 import ch.njol.skript.SkriptConfig;
 import ch.njol.skript.config.validate.SectionValidator;
 import ch.njol.skript.lang.Effect;
+import ch.njol.skript.lang.Script;
 import ch.njol.skript.lang.TriggerItem;
 import ch.njol.skript.lang.parser.ParserInstance;
 import ch.njol.skript.localization.ArgsMessage;
@@ -304,8 +305,14 @@ public abstract class Commands {
 		// Validate that there are no duplicates
 		final ScriptCommand existingCommand = commands.get(command.getLabel());
 		if (existingCommand != null && existingCommand.getLabel().equals(command.getLabel())) {
-			final File f = existingCommand.getScript();
-			Skript.error("A command with the name /" + existingCommand.getName() + " is already defined" + (f == null ? "" : " in " + f.getName()));
+			String fileName = "";
+			Script script = existingCommand.getScript();
+			if (script != null) {
+				File scriptFile = script.getConfig().getFile();
+				if (scriptFile != null)
+					fileName = " in " + scriptFile.getName();
+			}
+			Skript.error("A command with the name /" + existingCommand.getName() + " is already defined" + fileName);
 			return;
 		}
 		

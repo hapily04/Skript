@@ -30,6 +30,7 @@ import ch.njol.skript.command.ScriptCommand;
 import ch.njol.skript.config.SectionNode;
 import ch.njol.skript.lang.Literal;
 import ch.njol.skript.lang.ParseContext;
+import ch.njol.skript.lang.Script;
 import ch.njol.skript.lang.SkriptParser;
 import ch.njol.skript.lang.SkriptParser.ParseResult;
 import ch.njol.skript.lang.VariableString;
@@ -181,8 +182,14 @@ public class StructCommand extends Structure {
 		String command = matcher.group(1).toLowerCase();
 		ScriptCommand existingCommand = Commands.getScriptCommand(command);
 		if (existingCommand != null && existingCommand.getLabel().equals(command)) {
-			final File f = existingCommand.getScript();
-			Skript.error("A command with the name /" + existingCommand.getName() + " is already defined" + (f == null ? "" : " in " + f.getName()));
+			String fileName = "";
+			Script script = existingCommand.getScript();
+			if (script != null) {
+				File scriptFile = script.getConfig().getFile();
+				if (scriptFile != null)
+					fileName = " in " + scriptFile.getName();
+			}
+			Skript.error("A command with the name /" + existingCommand.getName() + " is already defined" + fileName);
 			return;
 		}
 
@@ -279,7 +286,8 @@ public class StructCommand extends Structure {
 
 		Commands.currentArguments = currentArguments;
 		try {
-			scriptCommand = new ScriptCommand(Objects.requireNonNull(node.getConfig().getFile()), command, pattern.toString(), currentArguments, description, usage,
+			//noinspection ConstantConditions
+			scriptCommand = new ScriptCommand(getParser().getCurrentScript(), command, pattern.toString(), currentArguments, description, usage,
 				aliases, permission, permissionMessage, cooldown, cooldownMessage, cooldownBypass, cooldownStorage,
 				executableBy, ScriptLoader.loadItems((SectionNode) entryContainer.getNonNullParsed("trigger")));
 			scriptCommand.trigger.setLineNumber(node.getLine());

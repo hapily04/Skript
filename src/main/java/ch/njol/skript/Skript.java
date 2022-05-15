@@ -42,6 +42,7 @@ import ch.njol.skript.lang.Effect;
 import ch.njol.skript.lang.Expression;
 import ch.njol.skript.lang.ExpressionInfo;
 import ch.njol.skript.lang.ExpressionType;
+import ch.njol.skript.lang.Script;
 import ch.njol.skript.lang.Section;
 import ch.njol.skript.lang.SkriptEvent;
 import ch.njol.skript.lang.SkriptEventInfo;
@@ -1765,9 +1766,9 @@ public final class Skript extends JavaPlugin implements Listener {
 		logEx("Current item: " + (item == null ? "null" : item.toString(null, true)));
 		if (item != null && item.getTrigger() != null) {
 			Trigger trigger = item.getTrigger();
-			assert trigger != null;
-			File script = trigger.getScript();
-			logEx("Current trigger: " + trigger.toString(null, true) + " (" + (script == null ? "null" : script.getName()) + ", line " + trigger.getLineNumber() + ")");
+			Script script = trigger.getScript();
+			File scriptFile = script != null ? script.getConfig().getFile() : null;
+			logEx("Current trigger: " + trigger.toString(null, true) + " (" + (scriptFile == null ? "null" : scriptFile.getName()) + ", line " + trigger.getLineNumber() + ")");
 		}
 		logEx();
 		logEx("Thread: " + (thread == null ? Thread.currentThread() : thread).getName());

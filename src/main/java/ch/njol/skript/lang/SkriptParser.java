@@ -28,6 +28,7 @@ import ch.njol.skript.command.ScriptCommand;
 import ch.njol.skript.command.ScriptCommandEvent;
 import ch.njol.skript.config.Config;
 import ch.njol.skript.expressions.ExprParse;
+import ch.njol.skript.lang.Script.ScriptWarning;
 import ch.njol.skript.lang.function.ExprFunctionCall;
 import ch.njol.skript.lang.function.FunctionReference;
 import ch.njol.skript.lang.function.Functions;
@@ -44,7 +45,6 @@ import ch.njol.skript.patterns.MalformedPatternException;
 import ch.njol.skript.patterns.PatternCompiler;
 import ch.njol.skript.patterns.SkriptPattern;
 import ch.njol.skript.registrations.Classes;
-import ch.njol.skript.util.ScriptOptions;
 import ch.njol.skript.util.Utils;
 import ch.njol.util.Kleenean;
 import ch.njol.util.NonNullPair;
@@ -705,14 +705,9 @@ public class SkriptParser {
 				return ts.get(0);
 			
 			if (and.isUnknown() && !suppressMissingAndOrWarnings) {
-				if (getParser().getCurrentScript() != null) {
-					Config cs = getParser().getCurrentScript();
-					if (!ScriptOptions.getInstance().suppressesWarning(cs.getFile(), "conjunction")) {
-						Skript.warning(MISSING_AND_OR + ": " + expr);
-					}
-				} else {
+				Script currentScript = getParser().getCurrentScript();
+				if (currentScript == null || !currentScript.suppressesWarning(ScriptWarning.MISSING_CONJUNCTION))
 					Skript.warning(MISSING_AND_OR + ": " + expr);
-				}
 			}
 			
 			final Class<? extends T>[] exprRetTypes = new Class[ts.size()];
@@ -841,13 +836,9 @@ public class SkriptParser {
 			}
 			
 			if (and.isUnknown() && !suppressMissingAndOrWarnings) {
-				if (getParser().getCurrentScript() != null) {
-					Config cs = getParser().getCurrentScript();
-					if (!ScriptOptions.getInstance().suppressesWarning(cs.getFile(), "conjunction"))
-						Skript.warning(MISSING_AND_OR + ": " + expr);
-				} else {
+				Script currentScript = getParser().getCurrentScript();
+				if (currentScript == null || !currentScript.suppressesWarning(ScriptWarning.MISSING_CONJUNCTION))
 					Skript.warning(MISSING_AND_OR + ": " + expr);
-				}
 			}
 			
 			final Class<?>[] exprRetTypes = new Class[ts.size()];
@@ -946,8 +937,9 @@ public class SkriptParser {
 //			}
 //			@SuppressWarnings("null")
 
+			Script currentScript = getParser().getCurrentScript();
 			final FunctionReference<T> e = new FunctionReference<>(functionName, SkriptLogger.getNode(),
-					getParser().getCurrentScript() != null ? getParser().getCurrentScript().getFileName() : null, types, params);//.toArray(new Expression[params.size()]));
+					currentScript != null ? currentScript.getConfig().getFileName() : null, types, params);//.toArray(new Expression[params.size()]));
 			if (!e.validateFunction(true)) {
 				log.printError();
 				return null;
