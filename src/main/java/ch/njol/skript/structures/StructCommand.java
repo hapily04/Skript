@@ -49,11 +49,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
 import org.eclipse.jdt.annotation.Nullable;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -182,14 +180,10 @@ public class StructCommand extends Structure {
 		String command = matcher.group(1).toLowerCase();
 		ScriptCommand existingCommand = Commands.getScriptCommand(command);
 		if (existingCommand != null && existingCommand.getLabel().equals(command)) {
-			String fileName = "";
 			Script script = existingCommand.getScript();
-			if (script != null) {
-				File scriptFile = script.getConfig().getFile();
-				if (scriptFile != null)
-					fileName = " in " + scriptFile.getName();
-			}
-			Skript.error("A command with the name /" + existingCommand.getName() + " is already defined" + fileName);
+			Skript.error("A command with the name /" + existingCommand.getName() + " is already defined"
+				+ (script != null ? (" in " + script.getConfig().getFileName()) : "")
+			);
 			return;
 		}
 

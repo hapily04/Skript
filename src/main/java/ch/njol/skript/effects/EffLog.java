@@ -118,11 +118,8 @@ public class EffLog extends Effect {
 				String scriptName = "---";
 				if (t != null) {
 					Script script = t.getScript();
-					if (script != null) {
-						File scriptFile = script.getConfig().getFile();
-						if (scriptFile != null)
-							scriptName = scriptFile.getName();
-					}
+					if (script != null)
+						scriptName = script.getConfig().getFileName();
 				}
 				Skript.info("[" + scriptName + "] " + message);
 			}

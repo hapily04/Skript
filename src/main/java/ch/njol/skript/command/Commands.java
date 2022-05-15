@@ -305,14 +305,10 @@ public abstract class Commands {
 		// Validate that there are no duplicates
 		final ScriptCommand existingCommand = commands.get(command.getLabel());
 		if (existingCommand != null && existingCommand.getLabel().equals(command.getLabel())) {
-			String fileName = "";
 			Script script = existingCommand.getScript();
-			if (script != null) {
-				File scriptFile = script.getConfig().getFile();
-				if (scriptFile != null)
-					fileName = " in " + scriptFile.getName();
-			}
-			Skript.error("A command with the name /" + existingCommand.getName() + " is already defined" + fileName);
+			Skript.error("A command with the name /" + existingCommand.getName() + " is already defined"
+				+ (script != null ? (" in " + script.getConfig().getFileName()) : "")
+			);
 			return;
 		}
 		
