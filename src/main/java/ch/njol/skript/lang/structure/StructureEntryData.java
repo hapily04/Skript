@@ -18,10 +18,30 @@
  */
 package ch.njol.skript.lang.structure;
 
-import ch.njol.skript.ScriptLoader;
 import ch.njol.skript.config.Node;
 import org.eclipse.jdt.annotation.Nullable;
 
+/**
+ * {@link Structure} entry data is used for defining the different entries of a Structure.
+ * Take a look at the following Skript {@link Structure}:
+ * <pre>
+ * command /example:
+ *   description: this is an example of an entry
+ *   trigger: # this is also an example of an entry
+ *     # code goes here (not entry data!)
+ * </pre>
+ * From the above, it can be seen that entry data is found at the <i>second</i> level
+ *  of indentation of any script, or the <i>first</i> level of indentation of a {@link Structure}.
+ * It can also be seen that {@link Structure} entries come in many different forms.
+ * In fact, all {@link Structure} entries are based upon a {@link Node}.
+ * This could be something like a {@link ch.njol.skript.config.SimpleNode} or {@link ch.njol.skript.config.SectionNode},
+ *  but it may also be something totally different.
+ * Every entry data class must define a validator-type method for {@link Node}s, along with
+ *  a method of obtaining a value from that {@link Node}.
+ * Every entry data instance must contain some sort of key. This key is the main identifier
+ *  of an entry data instance within a {@link StructureEntryValidator}.
+ * @param <T> The type of the value returned by this entry data.
+ */
 public abstract class StructureEntryData<T> {
 
 	private final String key;
@@ -47,31 +67,43 @@ public abstract class StructureEntryData<T> {
 		this.optional = optional;
 	}
 
+	/**
+	 * @return The key that identifies and defines this entry data.
+	 */
 	public String getKey() {
 		return key;
 	}
 
+	/**
+	 * @return The default value of this entry node to be used if {@link #getValue(Node)} is null,
+	 *  or if the user does not include an entry for this entry data in their {@link Structure} definition.
+	 */
 	@Nullable
 	public T getDefaultValue() {
 		return defaultValue;
 	}
 
-	public boolean hasDefaultValue() {
-		return defaultValue != null;
-	}
-
+	/**
+	 * @return Whether this entry data <b>must</b> be included in the definition of any {@link Structure} it is a part of.
+	 */
 	public boolean isOptional() {
 		return optional;
 	}
 
+	/**
+	 * Obtains a value from the provided node using the methods of this entry data.
+	 * @param node The node to obtain a value from.
+	 * @return The value obtained from the provided node.
+	 */
 	@Nullable
 	public abstract T getValue(Node node);
 
-	public boolean canCreateWith(Node node) {
-		String key = node.getKey();
-		if (key == null)
-			return false;
-		return key.equalsIgnoreCase(ScriptLoader.replaceOptions(key));
-	}
+	/**
+	 * A method to be implemented by all entry data classes that determines whether
+	 *  the provided node may be used with the entry data type to obtain a value.
+	 * @param node The node to check.
+	 * @return Whether the provided node may be used with this entry data to obtain a value.
+	 */
+	public abstract boolean canCreateWith(Node node);
 
 }

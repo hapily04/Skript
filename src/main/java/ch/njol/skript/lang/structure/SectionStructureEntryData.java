@@ -18,10 +18,15 @@
  */
 package ch.njol.skript.lang.structure;
 
+import ch.njol.skript.ScriptLoader;
 import ch.njol.skript.config.Node;
 import ch.njol.skript.config.SectionNode;
+import ch.njol.skript.config.SimpleNode;
 import org.eclipse.jdt.annotation.Nullable;
 
+/**
+ * A simple entry data class for handling {@link SectionNode}s.
+ */
 public class SectionStructureEntryData extends StructureEntryData<SectionNode> {
 
 	public SectionStructureEntryData(String key) {
@@ -36,6 +41,12 @@ public class SectionStructureEntryData extends StructureEntryData<SectionNode> {
 		super(key, defaultValue);
 	}
 
+	/**
+	 * Because this entry data is for {@link SectionNode}s, no specific handling needs to be done to obtain the "value".
+	 * This method just asserts that the provided node is actually a {@link SectionNode}.
+	 * @param node A {@link SimpleNode} to obtain (and possibly convert) the value of.
+	 * @return The value obtained from the provided {@link SimpleNode}.
+	 */
 	@Override
 	@Nullable
 	public SectionNode getValue(Node node) {
@@ -43,9 +54,21 @@ public class SectionStructureEntryData extends StructureEntryData<SectionNode> {
 		return (SectionNode) node;
 	}
 
+	/**
+	 * Checks whether the provided node can be used as the section for this entry data.
+	 * A check is done to verify that the node is a {@link SectionNode}, and that it also
+	 *  meets the requirements of {@link StructureEntryData#canCreateWith(Node)}.
+	 * @param node The node to check.
+	 * @return Whether the provided {@link Node} works with this entry data.
+	 */
 	@Override
 	public boolean canCreateWith(Node node) {
-		return node instanceof SectionNode && super.canCreateWith(node);
+		if (!(node instanceof SectionNode))
+			return false;
+		String key = node.getKey();
+		if (key == null)
+			return false;
+		return key.equalsIgnoreCase(ScriptLoader.replaceOptions(key));
 	}
 
 }
