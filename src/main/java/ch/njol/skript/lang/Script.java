@@ -25,6 +25,10 @@ import org.eclipse.jdt.annotation.Nullable;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * A Script is a container for the raw structure of a user's script along with
+ *  various data such as suppressed warnings.
+ */
 public class Script {
 
 	private final Config config;

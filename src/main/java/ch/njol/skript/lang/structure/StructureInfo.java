@@ -21,6 +21,9 @@ package ch.njol.skript.lang.structure;
 import ch.njol.skript.lang.SyntaxElementInfo;
 import org.eclipse.jdt.annotation.Nullable;
 
+/**
+ * Special {@link SyntaxElementInfo} for {@link Structure}s that may contain information such as the {@link StructureEntryValidator}.
+ */
 public class StructureInfo<E extends Structure> extends SyntaxElementInfo<E> {
 
 	public final boolean skipEntryParsing;

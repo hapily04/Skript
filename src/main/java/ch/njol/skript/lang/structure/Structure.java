@@ -45,11 +45,23 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Structures are the root element in every script. They are essentially the "headers".
+ * Events and functions are both a type of Structure. However, each one has its own
+ *  parsing requirements, order, and overall structure within.
+ *
+ * Structures may also contain "entries" that hold values or sections of code.
+ * The values of these entries can be obtained by parsing the Structure's sub{@link Node}s
+ *  through registered {@link StructureEntryData}.
+ */
 // TODO STRUCTURE make sure options work everywhere (maybe have some structure validation in preload instead of init)
 // TODO STRUCTURE javadocs (everywhere)
 // TODO STRUCTURE add Structures to docs
 public abstract class Structure implements SyntaxElement, Debuggable {
 
+	/**
+	 * The default {@link Priority} of every registered Structure.
+	 */
 	public static final Priority DEFAULT_PRIORITY = new Priority(100);
 
 	/**
@@ -58,6 +70,7 @@ public abstract class Structure implements SyntaxElement, Debuggable {
 	 * priority of 1 (loads first), priority of 2 (loads second), priority of 3 (loads third)
 	 */
 	public static class Priority implements Comparable<Priority> {
+
 		private final int priority;
 
 		public Priority(int priority) {
@@ -72,6 +85,7 @@ public abstract class Structure implements SyntaxElement, Debuggable {
 		public int compareTo(@NotNull Structure.Priority o) {
 			return Integer.compare(this.priority, o.priority);
 		}
+
 	}
 
 	@Override
@@ -86,7 +100,10 @@ public abstract class Structure implements SyntaxElement, Debuggable {
 			List<Node> unhandledNodes = new ArrayList<>();
 			for (Node node : structureData.sectionNode) // All nodes are unhandled
 				unhandledNodes.add(node);
-			return init(literals, matchedPattern, parseResult, new EntryContainer(structureData.sectionNode, null, null, unhandledNodes));
+			return init(
+				literals, matchedPattern, parseResult,
+				new EntryContainer(structureData.sectionNode, null, null, unhandledNodes)
+			);
 		}
 
 		StructureEntryValidator entryValidator = structureInfo.entryValidator;
@@ -94,30 +111,39 @@ public abstract class Structure implements SyntaxElement, Debuggable {
 		NonNullPair<Map<String, Node>, List<Node>> validated = entryValidator.validate(structureData.sectionNode);
 		if (validated == null)
 			return false;
-		return init(literals, matchedPattern, parseResult, new EntryContainer(structureData.sectionNode, entryValidator, validated.getFirst(), validated.getSecond()));
+		return init(
+			literals, matchedPattern, parseResult,
+			new EntryContainer(structureData.sectionNode, entryValidator, validated.getFirst(), validated.getSecond())
+		);
 	}
 
-	public abstract boolean init(Literal<?>[] args,
-								 int matchedPattern,
-								 ParseResult parseResult,
-								 EntryContainer entryContainer);
+	public abstract boolean init(Literal<?>[] args, int matchedPattern, ParseResult parseResult, EntryContainer entryContainer);
 
-	public void preLoad() {
+	/**
+	 * The first phase of Structure loading.
+	 * During this phase, all Structures across all loading scripts are loaded with respect to their priorities.
+	 */
+	public void preLoad() { }
 
-	}
-
+	/**
+	 * The second phase of Structure loading.
+	 * During this phase, Structures are loaded script by script.
+	 * The order they are loaded in for each script is based on the Structure's priority.
+	 */
 	public abstract void load();
 
-	public void postLoad() {
-
-	}
+	/**
+	 * The third and final phase of Structure loading.
+	 * The loading order and method is the same as {@link #load()}.
+	 * This method is primarily designed for Structures that wish to execute actions after
+	 *  most other Structures have finished loading.
+	 */
+	public void postLoad() { }
 
 	/**
 	 * Called when this structure is unloaded, similar to {@link SelfRegisteringSkriptEvent#unregister(Trigger)}.
 	 */
-	public void unload() {
-
-	}
+	public void unload() { }
 
 	/**
 	 * The priority of a Structure determines the order in which it should be loaded.

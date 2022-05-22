@@ -23,6 +23,13 @@ import ch.njol.skript.lang.structure.KeyValueStructureEntryData;
 import ch.njol.skript.registrations.Classes;
 import org.eclipse.jdt.annotation.Nullable;
 
+/**
+ * A specific {@link KeyValueStructureEntryData} type designed to parse the
+ *  entry's value as a supported literal type.
+ * This entry makes use of {@link Classes#parse(String, Class, ParseContext)}
+ *  to parse the user's input using registered {@link ch.njol.skript.classes.ClassInfo}s
+ *  and {@link ch.njol.skript.classes.Converter}s.
+ */
 public class LiteralStructureEntryData<T> extends KeyValueStructureEntryData<T> {
 
 	private final Class<T> type;

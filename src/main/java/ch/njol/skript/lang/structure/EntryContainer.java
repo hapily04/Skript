@@ -38,8 +38,8 @@ public class EntryContainer {
 	private final List<Node> unhandledNodes;
 
 	EntryContainer(
-		SectionNode source, @Nullable StructureEntryValidator entryValidator, @Nullable Map<String, Node> handledNodes, List<Node> unhandledNodes)
-	{
+		SectionNode source, @Nullable StructureEntryValidator entryValidator, @Nullable Map<String, Node> handledNodes, List<Node> unhandledNodes
+	) {
 		this.source = source;
 		this.entryValidator = entryValidator;
 		this.handledNodes = handledNodes;
@@ -119,7 +119,7 @@ public class EntryContainer {
 			return null;
 
 		StructureEntryData<?> entryData = null;
-		for (StructureEntryData<?> data : entryValidator.entryDataMap) {
+		for (StructureEntryData<?> data : entryValidator.entryData) {
 			if (data.getKey().equals(key)) {
 				entryData = data;
 				break;

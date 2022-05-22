@@ -77,7 +77,7 @@ public class StructCommand extends Structure {
 				.addEntryData(new KeyValueStructureEntryData<VariableString>("permission message", true) {
 					@Override
 					@Nullable
-					public VariableString getValue(String value) {
+					protected VariableString getValue(String value) {
 						return VariableString.newInstance(value.replace("\"", "\"\""));
 					}
 				})
@@ -85,7 +85,7 @@ public class StructCommand extends Structure {
 					private final Pattern pattern = Pattern.compile("\\s*,\\s*/?");
 
 					@Override
-					public List<String> getValue(String value) {
+					protected List<String> getValue(String value) {
 						List<String> aliases = new ArrayList<>(Arrays.asList(pattern.split(value)));
 						if (aliases.get(0).startsWith("/")) {
 							aliases.set(0, aliases.get(0).substring(1));
@@ -100,7 +100,7 @@ public class StructCommand extends Structure {
 
 					@Override
 					@Nullable
-					public Integer getValue(String value) {
+					protected Integer getValue(String value) {
 						int executableBy = 0;
 						for (String b : pattern.split(value)) {
 							if (b.equalsIgnoreCase("console") || b.equalsIgnoreCase("the console")) {
@@ -118,7 +118,7 @@ public class StructCommand extends Structure {
 				.addEntryData(new KeyValueStructureEntryData<VariableString>("cooldown message", true) {
 					@Override
 					@Nullable
-					public VariableString getValue(String value) {
+					protected VariableString getValue(String value) {
 						return VariableString.newInstance(value.replace("\"", "\"\""));
 					}
 				})
@@ -126,7 +126,7 @@ public class StructCommand extends Structure {
 				.addEntryData(new KeyValueStructureEntryData<VariableString>("cooldown storage", true) {
 					@Override
 					@Nullable
-					public VariableString getValue(String value) {
+					protected VariableString getValue(String value) {
 						return VariableString.newInstance(value, StringMode.VARIABLE_NAME);
 					}
 				})

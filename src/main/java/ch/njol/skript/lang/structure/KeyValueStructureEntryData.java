@@ -24,6 +24,12 @@ import ch.njol.skript.config.SimpleNode;
 import ch.njol.skript.lang.structure.StructureEntryValidator.StructureEntryValidatorBuilder;
 import org.eclipse.jdt.annotation.Nullable;
 
+/**
+ * An entry based on {@link SimpleNode}s containing a key and a value.
+ * Unlike a traditional {@link ch.njol.skript.config.EntryNode}, this entry data
+ *  may have a value that is <i>not</i> a String.
+ * @param <T> The type of the value.
+ */
 public abstract class KeyValueStructureEntryData<T> extends StructureEntryData<T> {
 
 	public KeyValueStructureEntryData(String key) {
@@ -38,6 +44,13 @@ public abstract class KeyValueStructureEntryData<T> extends StructureEntryData<T
 		super(key, optional);
 	}
 
+	/**
+	 * Used to obtain and parse the value of a {@link SimpleNode}. This method accepts
+	 *  any type of node, but assumes the input to be a {@link SimpleNode}. Before calling this method,
+	 *  the caller should first check {@link #canCreateWith(Node)} to make sure that the node is viable.
+	 * @param node A {@link SimpleNode} to obtain (and possibly convert) the value of.
+	 * @return The value obtained from the provided {@link SimpleNode}.
+	 */
 	@Nullable
 	@Override
 	public final T getValue(Node node) {
@@ -51,14 +64,30 @@ public abstract class KeyValueStructureEntryData<T> extends StructureEntryData<T
 		return value;
 	}
 
+	/**
+	 * Parses a String value using this entry data.
+	 * @param value The String value to parse.
+	 * @return The parsed value.
+	 */
 	@Nullable
-	public abstract T getValue(String value);
+	protected abstract T getValue(String value);
 
 	// TODO by default this should probably use the entry separator specified in builder
+
+	/**
+	 * @return The String acting as a separator between the key and the value.
+	 */
 	public String getSeparator() {
 		return StructureEntryValidatorBuilder.DEFAULT_ENTRY_SEPARATOR;
 	}
 
+	/**
+	 * Checks whether the provided node can have its value obtained using this entry data.
+	 * A check is done to verify that the node is a {@link SimpleNode}, and that it starts
+	 *  with the necessary key.
+	 * @param node The node to check.
+	 * @return Whether the provided {@link Node} works with this entry data.
+	 */
 	@Override
 	public boolean canCreateWith(Node node) {
 		if (!(node instanceof SimpleNode))
