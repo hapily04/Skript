@@ -217,10 +217,6 @@ public class ParserInstance {
 		Script previous = this.currentScript;
 		this.currentScript = currentScript;
 		getDataInstances().forEach(data -> data.onCurrentScriptChange(previous, currentScript));
-		if (previous != null)
-			previous.onUnload(currentScript, this);
-		if (currentScript != null)
-			currentScript.onLoad(previous, this);
 	}
 
 	public void setScriptInfo(ScriptInfo scriptInfo) {

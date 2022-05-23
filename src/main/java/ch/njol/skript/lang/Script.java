@@ -19,8 +19,6 @@
 package ch.njol.skript.lang;
 
 import ch.njol.skript.config.Config;
-import ch.njol.skript.lang.parser.ParserInstance;
-import org.eclipse.jdt.annotation.Nullable;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -79,26 +77,6 @@ public class Script {
 		VARIABLE_SAVE, // Variable cannot be saved (the ClassInfo is not serializable)
 		MISSING_CONJUNCTION, // Missing "and" or "or"
 		VARIABLE_STARTS_WITH_EXPRESSION // Variable starts with an Expression
-	}
-
-	// Script Events
-
-	/**
-	 * Called when this Script is loaded.
-	 * @param oldScript The script that was unloaded before this script started loading.
-	 *                  Null if there was no current script in the {@link ParserInstance}.
-	 */
-	public void onLoad(@Nullable Script oldScript, ParserInstance parser) {
-
-	}
-
-	/**
-	 * Called when this Script is unloaded.
-	 * @param newScript The script being loaded after this script is unloaded.
-	 *                  Null if there is no script being loaded after this in the {@link ParserInstance}.
-	 */
-	public void onUnload(@Nullable Script newScript, ParserInstance parser) {
-
 	}
 
 }
